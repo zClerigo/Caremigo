@@ -1,12 +1,14 @@
 from rest_framework import serializers
-from .models import Patient, MedicalRecord
-
-class PatientSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Patient
-        fields = '__all__'
+from .models import Profile, MedicalRecord
 
 class MedicalRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedicalRecord
-        fields = '__all__' 
+        fields = ['id', 'title', 'date', 'description', 'image', 'created_at']
+
+class ProfileSerializer(serializers.ModelSerializer):
+    records = MedicalRecordSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = Profile
+        fields = ['id', 'name', 'relationship', 'records'] 
