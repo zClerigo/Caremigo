@@ -109,13 +109,7 @@ const MedicalRecords = ({ profile, onBack }) => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">No medical records available for this profile.</p>
-              <button 
-                onClick={handleAddRecord}
-                className="inline-block bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Upload Your First Record
-              </button>
+              <p className="text-gray-600">No medical records available for this profile.</p>
             </div>
           )}
         </div>

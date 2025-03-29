@@ -173,23 +173,14 @@ function AddRecord() {
               />
             </div>
             
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200 disabled:opacity-50"
-              >
-                {isUploading ? 'Uploading...' : 'Upload Record'}
-              </button>
-              <button
-                type="button"
-                onClick={handleAnalyze}
-                disabled={!imagePreview}
-                className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition duration-200 disabled:opacity-50"
-              >
-                Analyze Record
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={!imagePreview}
+              className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition duration-200 disabled:opacity-50"
+            >
+              Analyze Record
+            </button>
           </form>
         </div>
       </div>
