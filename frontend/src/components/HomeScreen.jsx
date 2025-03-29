@@ -32,8 +32,8 @@ const HomeScreen = ({ onProfileSelect }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="container mx-auto px-4 py-8 flex-grow">
+    <div className="min-h-screen w-full bg-gray-100 flex flex-col">
+      <div className="w-full px-8 py-8 flex-grow">
         <h1 className="text-4xl font-bold mb-8 text-black">Your Profiles</h1>
         
         {showForm && (
@@ -62,13 +62,13 @@ const HomeScreen = ({ onProfileSelect }) => {
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="bg-blue-800 text-white px-6 py-2 rounded hover:bg-blue-900 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-colors"
+                className="bg-blue-800 text-white px-6 py-2 rounded hover:bg-blue-900 transition-colors"
               >
                 Create Profile
               </button>
@@ -90,13 +90,15 @@ const HomeScreen = ({ onProfileSelect }) => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-6 bg-white border-t">
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-        >
-          {showForm ? 'Cancel' : 'Create New Profile'}
-        </button>
+      <div className="w-full bg-white border-t">
+        <div className="w-full px-8 py-6">
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="w-full bg-blue-800 text-white px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors"
+          >
+            {showForm ? 'Cancel' : 'Create New Profile'}
+          </button>
+        </div>
       </div>
     </div>
   );

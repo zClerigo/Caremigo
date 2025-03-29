@@ -2,12 +2,12 @@ import React from 'react';
 
 const MedicalRecords = ({ profile, onBack }) => {
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      <div className="container mx-auto px-4 py-8 flex-grow">
+    <div className="min-h-screen w-full bg-gray-100 flex flex-col">
+      <div className="w-full px-8 py-8 flex-grow">
         <div className="flex items-center mb-8">
           <button
             onClick={onBack}
-            className="bg-gray-500 text-white px-6 py-2 rounded-lg mr-4 hover:bg-gray-600 transition-colors"
+            className="bg-blue-800 text-white px-6 py-2 rounded-lg mr-4 hover:bg-blue-900 transition-colors"
           >
             Back to Profiles
           </button>
