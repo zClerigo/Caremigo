@@ -1,0 +1,166 @@
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+function MedicalAnalysis({ onBack }) {
+  const [analyzing, setAnalyzing] = useState(false);
+  const [medicalSummary, setMedicalSummary] = useState(null);
+  const [currentTab, setCurrentTab] = useState(0);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { image, imageData, profile } = location.state || {};
+
+  useEffect(() => {
+    if (imageData) {
+      analyzeImage(imageData);
+    }
+  }, [imageData]);
+
+  async function analyzeImage(base64Image) {
+    if (!base64Image) {
+      return;
+    }
+
+    setAnalyzing(true);
+    setMedicalSummary(null);
+
+    try {
+      // Generate medical summary using Gemini
+      const summary = await generateMedicalSummary(base64Image);
+      if (summary) {
+        setMedicalSummary(summary);
+      }
+    } catch (error) {
+      console.error("Analysis error:", error);
+      alert("Error analyzing image: " + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  // Function to generate medical summary using Gemini
+  async function generateMedicalSummary(imageBase64) {
+    try {
+      // Call Gemini API
+      const apiKey = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text: "Analyze this medical record image and provide information in the following three categories:\n\n1. Summary: Brief explanation of the results in simple, layman's terms.\n\n2. What can I do?: Suggest lifestyle changes, diet modifications, or exercises the patient can personally implement.\n\n3. Where to go?: Recommend specific specialist doctors (e.g., cardiologist, endocrinologist) the patient should consult based on any abnormal values.\n\nKeep each section concise, about 1-2 sentences each."
+              },
+              {
+                inline_data: {
+                  mime_type: "image/jpeg",
+                  data: imageBase64
+                }
+              }
+            ]
+          }
+        ],
+        generation_config: {
+          temperature: 0.4,
+          top_p: 0.95,
+          max_output_tokens: 300
+        }
+      };
+      
+      const geminiResponse = await fetch(`${apiUrl}?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      const geminiData = await geminiResponse.json();
+      
+      if (geminiData.candidates && geminiData.candidates[0]?.content?.parts[0]?.text) {
+        return geminiData.candidates[0].content.parts[0].text;
+      } else {
+        console.error("Failed to generate medical summary:", geminiData);
+        return null;
+      }
+    } catch (error) {
+      console.error("Medical summary generation error:", error);
+      return null;
+    }
+  }
+
+  const formatSummary = (summary) => {
+    if (!summary) return null;
+    
+    // Split by numbered sections (1., 2., 3.)
+    const sections = summary.split(/(\d+\.\s+)/);
+    const formattedSections = [];
+    
+    for (let i = 1; i < sections.length; i += 2) {
+      const title = sections[i].replace(/^\d+\.\s+/, '');
+      const content = sections[i + 1];
+      formattedSections.push({ title, content });
+    }
+    
+    return formattedSections;
+  };
+
+  const formattedSummary = formatSummary(medicalSummary);
+
+  return (
+    <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-6xl">
+      <div className="flex items-center mb-6 border-b pb-4">
+        <button onClick={onBack} className="text-blue-500 hover:text-blue-700 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Profile
+        </button>
+        <h1 className="text-2xl font-semibold text-center flex-1">Medical Record Analysis</h1>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Medical Record Image</h2>
+          <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+            {image ? (
+              <img
+                src={image}
+                alt="Medical Record"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                No image available
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Analysis Results</h2>
+          {analyzing ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : formattedSummary ? (
+            <div className="space-y-6">
+              {formattedSummary.map((section, index) => (
+                <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-gray-800 mb-2">{section.title}</h3>
+                  <p className="text-gray-600">{section.content}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              No analysis available. Please try analyzing the image again.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default MedicalAnalysis; 
