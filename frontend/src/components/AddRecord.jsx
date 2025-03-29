@@ -80,7 +80,20 @@ function AddRecord() {
       return;
     }
     
-    navigate(`/medical-analysis/${profileId}/new`);
+    // Create a temporary record with the current form data
+    const tempRecord = {
+      title,
+      date,
+      description,
+      image: imagePreview,
+      image_data: imageData
+    };
+    
+    navigate(`/medical-analysis/${profileId}/new`, { 
+      state: { 
+        record: tempRecord
+      }
+    });
   };
 
   if (!profile) {
