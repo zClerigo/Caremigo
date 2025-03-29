@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
 
-function AddRecord({ profile, onBack }) {
+function AddRecord() {
+  const { profileId } = useParams();
+  const [profile, setProfile] = useState(null);
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
   const [description, setDescription] = useState('');
@@ -11,6 +14,19 @@ function AddRecord({ profile, onBack }) {
   const [isUploading, setIsUploading] = useState(false);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/profiles/${profileId}/`);
+        setProfile(response.data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        navigate('/');
+      }
+    };
+    fetchProfile();
+  }, [profileId, navigate]);
   
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -19,7 +35,6 @@ function AddRecord({ profile, onBack }) {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        // Store base64 data for analysis
         const base64Data = reader.result.split(',')[1];
         setImageData(base64Data);
       };
@@ -37,27 +52,20 @@ function AddRecord({ profile, onBack }) {
       formData.append('date', date);
       formData.append('description', description);
       formData.append('image', image);
-      formData.append('profile_id', profile.id);
       
-      const response = await fetch('http://localhost:8000/api/medical-records/', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await axios.post(
+        `http://localhost:8000/api/profiles/${profileId}/records/`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
       
-      if (!response.ok) {
-        throw new Error('Failed to upload medical record');
+      if (response.status === 201) {
+        navigate(`/profile/${profileId}`);
       }
-      
-      // Reset form after successful submission
-      setTitle('');
-      setDate('');
-      setDescription('');
-      setImage(null);
-      setImagePreview(null);
-      setImageData(null);
-      
-      // Navigate back to profile view
-      onBack();
     } catch (error) {
       console.error('Error uploading record:', error);
       alert('Failed to upload medical record. Please try again.');
@@ -72,25 +80,40 @@ function AddRecord({ profile, onBack }) {
       return;
     }
     
-    navigate('/medical-analysis', { 
+    // Create a temporary record with the current form data
+    const tempRecord = {
+      title,
+      date,
+      description,
+      image: imagePreview,
+      image_data: imageData
+    };
+    
+    navigate(`/medical-analysis/${profileId}/new`, { 
       state: { 
-        image: imagePreview,
-        imageData: imageData,
-        profile: profile
-      } 
+        record: tempRecord
+      }
     });
   };
+
+  if (!profile) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
   
   return (
     <div className="container mx-auto p-8 bg-white rounded-lg shadow-md max-w-6xl">
       <div className="flex items-center mb-6 border-b pb-4">
-        <button onClick={onBack} className="text-blue-500 hover:text-blue-700 flex items-center">
+        <button onClick={() => navigate(`/profile/${profileId}`)} className="text-blue-500 hover:text-blue-700 flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back to Profile
         </button>
-        <h1 className="text-2xl font-semibold text-center flex-1">Add Medical Record</h1>
+        <h1 className="text-2xl font-semibold text-center flex-1">Upload Medical Record</h1>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -163,23 +186,14 @@ function AddRecord({ profile, onBack }) {
               />
             </div>
             
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={isUploading}
-                className="flex-1 bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition duration-200 disabled:opacity-50"
-              >
-                {isUploading ? 'Uploading...' : 'Upload Record'}
-              </button>
-              <button
-                type="button"
-                onClick={handleAnalyze}
-                disabled={!imagePreview}
-                className="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition duration-200 disabled:opacity-50"
-              >
-                Analyze Record
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleAnalyze}
+              disabled={!imagePreview}
+              className="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 transition duration-200 disabled:opacity-50"
+            >
+              Analyze Record
+            </button>
           </form>
         </div>
       </div>

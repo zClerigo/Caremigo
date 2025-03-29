@@ -10,4 +10,5 @@ HOW TO RUN:
 Dependencies:
 1. `pip install Pillow`
 2. `pip install django`
+3. `npm install axios`
 3. `npm install react-router-dom`
