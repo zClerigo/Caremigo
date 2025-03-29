@@ -8,6 +8,6 @@ HOW TO RUN:
 4. Run `python manage.py runserver` in the backend directory
 
 Dependencies:
-1. 'pip install Pillow'
-2. 'pip install django'
-3. 'npm install react-router-dom'
+1. `pip install Pillow`
+2. `pip install django`
+3. `npm install react-router-dom`
