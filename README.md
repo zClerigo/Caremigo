@@ -38,3 +38,29 @@ Dependencies:
 5. `npm install react-zoom-pan-pinch`
 6. `npm install @dnd-kit/core`
 7. `npm install framer-motion`
+
+![image](https://github.com/user-attachments/assets/23b0d470-47c8-421d-bddd-03c801cef74c)
+
+![image](https://github.com/user-attachments/assets/5d5f4bb7-49f5-4e80-b3ab-808af82f5fbc)
+
+![image](https://github.com/user-attachments/assets/85d2320f-298f-4136-a250-7e6b8587304b)
+
+![image](https://github.com/user-attachments/assets/2c7bae18-bf76-4553-926f-ddb92f0cb16c)
+
+![image](https://github.com/user-attachments/assets/ba18cf34-4e01-4c90-8ddd-1f14f9c9c4f6)
+
+![image](https://github.com/user-attachments/assets/23c44db0-3dfc-42e0-999f-10584d2cf92c)
+
+![image](https://github.com/user-attachments/assets/42b69902-52e6-4adf-b57b-865d1153476d)
+
+![image](https://github.com/user-attachments/assets/e799d2f4-2fad-41e2-9571-c26eb2907137)
+
+![image](https://github.com/user-attachments/assets/7f5c1ba2-9dd8-4aa9-ae0b-cbf698c87a6c)
+
+![image](https://github.com/user-attachments/assets/f1b82534-7705-41d4-bcf0-29f23df07945)
+
+![image](https://github.com/user-attachments/assets/e872416c-f470-45af-951f-a5bc63730c85)
+
+![image](https://github.com/user-attachments/assets/fa59fd17-9df1-48c0-84af-ea730c424f8f)
+
+![image](https://github.com/user-attachments/assets/65ae7fab-3905-4d4d-8deb-0be560cc0e83)
