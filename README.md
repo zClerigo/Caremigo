@@ -1,4 +1,4 @@
-## Caremigo
+# Caremigo
 
 HOW TO RUN:
 
@@ -16,17 +16,17 @@ Dependencies:
 5. `npm install react-zoom-pan-pinch`
 6. `npm install @dnd-kit/core`
 
-# Team Name
+## Team Name
 blank
 
-# Team Members
+## Team Members
 Emilio Cardillo-Schrader, Zidanni Clerigo, Chinli Ong, Daniel Llonch
 
-# User Story
+## User Story
 
 
-# Description
+## Description
 
 
-# Technologies
+## Technologies
 
