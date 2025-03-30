@@ -135,9 +135,12 @@ function MedicalAnalysis() {
     
     for (let i = 1; i < sections.length; i += 2) {
       const title = sections[i].replace(/^\d+\.\s+/, '');
-      const content = sections[i + 1];
+      let content = sections[i + 1];
+      content = content.replace(/\|\|(.*?)\|\|/g, '<span class="bg-yellow-200">$1</span>');
       formattedSections.push({ title, content });
     }
+
+    console.log("Formatted sections:", formattedSections);
     
     return formattedSections;
   };
@@ -216,7 +219,7 @@ function MedicalAnalysis() {
                   {formattedSummary.map((section, index) => (
                     <div key={index} className="bg-gray-50 p-4 rounded-lg">
                       <h3 className="font-semibold text-gray-800 mb-2">{section.title}</h3>
-                      <p className="text-gray-600">{section.content}</p>
+                      <p className="text-gray-600" dangerouslySetInnerHTML={{ __html: section.content }}></p>
                     </div>
                   ))}
                 </div>
