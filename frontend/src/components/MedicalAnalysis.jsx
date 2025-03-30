@@ -431,20 +431,19 @@ function MedicalAnalysis() {
     }
   };
 
-  const handleRegionClick = (region, event) => {
-    // Check if this region already has a popup
+  const handleRegionClick = async (region, event) => {
+    // Check for existing popup
     const existingPopupIndex = popups.findIndex(popup => popup.region.id === region.id);
     
     if (existingPopupIndex >= 0) {
-      // If popup exists, bring it to front by moving it to the end of the array
-      const updatedPopups = [...popups];
+            const updatedPopups = [...popups];
       const popup = updatedPopups.splice(existingPopupIndex, 1)[0];
       setPopups([...updatedPopups, popup]);
       return;
     }
     
-    // Calculate popup position based on click event
-    let position = { x: 100, y: 100 }; // Default position
+    // Calculate position
+    let position = { x: 100, y: 100 };
     if (event) {
       // Position the popup near the click but ensure it stays in viewport
       const x = Math.min(event.clientX, window.innerWidth - 300); // 300px is approximate popup width
@@ -452,15 +451,54 @@ function MedicalAnalysis() {
       position = { x, y };
     }
     
-    // Add new popup
+    try {
+      // Make API call to get additional information
+      const apiKey = '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';
+      const apiUrl = 'https://api.perplexity.ai/chat/completions';
+
+      const response = await axios.post(apiUrl, {
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful assistant that explains medical terms and values. Provide a brief explanation of what this value or measurement means in the context of medical records. Keep the explanation under 100 words.'
+          },
+          {
+            role: 'user',
+            content: `Explain this medical value or measurement: ${region.text}`
+          }
+        ]
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const explanation = response.data.choices[0].message.content;
+
+      // Add new popup with the additional information
     setPopups([...popups, {
-      id: `popup-${Date.now()}`, // Unique ID
+      id: `popup-${Date.now()}`,
       region: region,
-      position: position
+      position: position,
+        explanation: explanation
     }]);
     
     // Highlight the region
     setSelectedRegion(region);
+
+    } catch (error) {
+      console.error('Error fetching explanation:', error);
+      // Add popup without explanation if API call fails
+      setPopups([...popups, {
+        id: `popup-${Date.now()}`,
+        region: region,
+        position: position,
+        explanation: 'Unable to load explanation.'
+      }]);
+      setSelectedRegion(region);
+    }
   };
   
   const closePopup = (popupId) => {
@@ -718,6 +756,7 @@ function MedicalAnalysis() {
             </div>
             <div className="max-h-40 overflow-y-auto">
               <p className="text-gray-700 text-sm mb-2">{popup.region.text || ''}</p>
+<p className="text-gray-700 text-sm mb-2">{popup.explanation || ''}</p>
               <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
                 <p>Position: {popup.region.x.toFixed(1)}%, {popup.region.y.toFixed(1)}%</p>
                 <p>Size: {popup.region.width.toFixed(1)}% × {popup.region.height.toFixed(1)}%</p>
