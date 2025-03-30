@@ -368,44 +368,63 @@ function ProfileKanbanBoard({ profile }) {
             });
     };
 
-    if (loading) return <div className="kanban-board p-3 border rounded shadow bg-gray-100 min-w-[300px]">Loading tasks for {profile.name}...</div>;
-    if (error) return <div className="kanban-board p-3 border rounded shadow bg-red-100 text-red-700 min-w-[300px]">{error}</div>;
+    if (loading) return <div className="text-center p-4">Loading data for {profile.name}...</div>;
+    if (error) return <div className="text-center p-4 text-red-500">{error}</div>;
+    if (!tasks || Object.values(tasks).every(list => list.length === 0)) return (
+        <div className="profile-board bg-gray-100 p-4 rounded-lg shadow-lg min-h-[200px]">
+            <h2 className="text-xl font-source-sans-pro mb-4">{profile.name}</h2>
+            <p className="text-gray-500">No tasks found for this profile.</p>
+        </div>
+    );
+
+    // Function to get all task IDs for SortableContext
+    const getAllTaskIds = () => {
+        let ids = [];
+        Object.values(tasks).forEach(taskList => {
+            if(taskList) {
+                ids = ids.concat(taskList.map(task => task.id));
+            }
+        });
+        return ids;
+    };
 
     return (
-        <DndContext 
-            sensors={sensors} 
-            collisionDetection={closestCorners} 
-            onDragStart={handleDragStart} 
-            onDragEnd={handleDragEnd}
-        >
-            <div className="kanban-board p-3 border rounded shadow bg-white min-w-[350px] max-w-[400px]">
-                <h3 className="text-lg font-semibold mb-3 text-center">{profile.name}</h3>
-                {error && <p className="text-red-500 text-sm mb-2 text-center">{error}</p>}
-                <div className="flex gap-3">
-                    {Object.entries(COLUMNS).map(([statusKey, statusValue]) => (
-                        <KanbanColumn 
-                            key={statusKey} 
-                            id={statusKey} 
-                            title={statusValue} 
-                            tasks={tasks[statusKey] || []} 
-                            onAddTask={statusKey === 'todo' ? handleAddTask : undefined}
-                            onEditTask={handleOpenEditModal} 
-                        />
-                    ))}
-                </div>
-            </div>
-            <DragOverlay>
-                {activeTask ? <KanbanTask task={activeTask} /> : null}
-            </DragOverlay>
-            
-            {/* Render the Edit Modal */}
-            <EditTaskModal 
-                task={editingTask}
+        <div className="profile-board bg-gray-100 p-4 rounded-lg shadow-lg min-h-[300px]">
+            <h2 className="text-xl font-bold font-source-sans-pro mb-4 text-gray-800">{profile.name}'s Board</h2>
+            <DndContext 
+                sensors={sensors} 
+                collisionDetection={closestCorners}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd} 
+            >
+                {/* Pass all task IDs from all columns */}
+                <SortableContext items={getAllTaskIds()} strategy={verticalListSortingStrategy}>
+                    <div className="kanban-columns grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {Object.entries(COLUMNS).map(([statusKey, statusValue]) => (
+                            <KanbanColumn 
+                                key={statusKey} 
+                                id={statusKey} 
+                                title={statusValue}
+                                tasks={tasks[statusKey] || []} 
+                                onAddTask={handleAddTask}
+                                onEditTask={handleOpenEditModal} // Pass edit handler
+                            />
+                        ))}
+                    </div>
+                </SortableContext>
+                 {/* Optional Drag Overlay */}
+                 <DragOverlay>
+                    {activeTask ? <KanbanTask task={activeTask} /> : null}
+                </DragOverlay>
+            </DndContext>
+             {/* Edit Task Modal */}
+             <EditTaskModal 
                 isOpen={isEditModalOpen}
                 onClose={handleCloseEditModal}
+                task={editingTask}
                 onSave={handleUpdateTask}
-            />
-        </DndContext>
+             />
+        </div>
     );
 }
 

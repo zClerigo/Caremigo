@@ -52,13 +52,13 @@ const HomeScreen = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Family Medical Records</h1>
+        <h1 className="text-4xl italic font-source-sans-pro text-gray-900 mb-8">Family Medical Records</h1>
         
         <div className="mb-12">
           <KanbanContainer />
         </div>
 
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">Profiles</h2>
+        <h2 className="text-2xl italic font-source-sans-pro text-gray-800 mb-6">Profiles</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Existing Profiles */}
