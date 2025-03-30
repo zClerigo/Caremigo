@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import KanbanContainer from './KanbanContainer';
 
 const HomeScreen = () => {
   const [profiles, setProfiles] = useState([]);
@@ -51,7 +52,13 @@ const HomeScreen = () => {
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Family Medical Records</h1>
+        <h1 className="text-4xl italic font-source-sans-pro text-gray-900 mb-8">Family Medical Records</h1>
+        
+        <div className="mb-12">
+          <KanbanContainer />
+        </div>
+
+        <h2 className="text-2xl italic font-source-sans-pro text-gray-800 mb-6">Profiles</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Existing Profiles */}
@@ -83,12 +90,12 @@ const HomeScreen = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Create New Profile</h2>
+            <h2 className="text-2xl font-source-sans-pro text-gray-900 mb-6">Create New Profile</h2>
             <form onSubmit={handleCreateProfile}>
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
+                <label className="block text-gray-700 text-sm font-source-sans-pro mb-2" htmlFor="name">
                   Name
                 </label>
                 <input
@@ -96,12 +103,12 @@ const HomeScreen = () => {
                   id="name"
                   value={newProfile.name}
                   onChange={(e) => setNewProfile({ ...newProfile, name: e.target.value })}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  className="shadow appearance-none border font-source-sans-pro rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                   required
                 />
               </div>
               <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="relationship">
+                  <label className="block text-gray-700 text-sm font-source-sans-pro mb-2" htmlFor="relationship">
                   Relationship
                 </label>
                 <input
@@ -117,13 +124,13 @@ const HomeScreen = () => {
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-source-sans-pro py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-source-sans-pro py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
                   Create Profile
                 </button>
