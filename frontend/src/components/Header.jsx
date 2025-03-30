@@ -10,7 +10,7 @@ const Header = () => {
             <Link to="/" className="flex items-center">
               <img src="/Caremigo-logo-transparent.png" alt="Caremigo Logo" className="h-20" />
             </Link>
-            <span className="text-blue-600 italic text-xl ml-4 gradient-text">Happy Sunday, Ziddani!</span>
+            <span className="text-blue-600 italic text-xl ml-4 gradient-text">Happy Sunday, Zidanni!</span>
           </div>
           
           <nav className="flex space-x-8">

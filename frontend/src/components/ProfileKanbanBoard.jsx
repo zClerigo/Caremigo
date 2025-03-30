@@ -21,7 +21,7 @@ import EditTaskModal from './EditTaskModal'; // Import the modal
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const COLUMNS = {
-    todo: 'To Do',
+    todo: 'To Review',
     inprogress: 'In Progress',
     done: 'Done'
 };

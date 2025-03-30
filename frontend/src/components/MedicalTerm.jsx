@@ -85,7 +85,7 @@ function MedicalTerm() {
 
       try {
         // Replace this with your Perplexity API key
-        const apiKey = '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';
+        const apiKey = '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';
         const apiUrl = 'https://api.perplexity.ai/chat/completions';
 
         // Prepare the request payload

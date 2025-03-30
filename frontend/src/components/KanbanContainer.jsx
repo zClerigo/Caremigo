@@ -60,9 +60,9 @@ function KanbanContainer() {
         }
     };
 
-    if (loading) return <div className="text-center p-4">Loading Kanban boards...</div>;
+    if (loading) return <div className="text-center p-4 gradient-text">Loading Task Boards...</div>;
     if (error) return <div className="text-center p-4 text-red-500">{error}</div>;
-    if (profiles.length === 0) return <div className="text-center p-4">No profiles found. Add a profile to create a Kanban board.</div>;
+    if (profiles.length === 0) return <div className="text-center p-4 gradient-text">Add a profile to create a Task Board.</div>;
 
     return (
         <DndContext 
