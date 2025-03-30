@@ -39,6 +39,7 @@ Dependencies:
 6. `npm install @dnd-kit/core`
 7. `npm install framer-motion`
 
+## Images
 ![image](https://github.com/user-attachments/assets/23b0d470-47c8-421d-bddd-03c801cef74c)
 
 ![image](https://github.com/user-attachments/assets/5d5f4bb7-49f5-4e80-b3ab-808af82f5fbc)
