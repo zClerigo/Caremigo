@@ -16,7 +16,7 @@ Caremigo, our solution, is a web app that can analyze and provide a layman's int
 Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, SQL Lite
 
 ## Sponsor Track
-Harnessing AI for Community Risk Awareness
+Chubb: Harnessing AI for Community Risk Awareness
 Create an informal tool or app that educates users about the potential risks in their community (e.g., natural disasters, health concerns).
 
 How to run:
