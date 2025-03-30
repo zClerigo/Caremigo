@@ -1,4 +1,4 @@
-# quack-hacks-react-django
+# Caremigo
 
 HOW TO RUN:
 
@@ -14,3 +14,4 @@ Dependencies:
 3. `npm install react-router-dom`
 4. `npm install react-markdown`
 5. `npm install react-zoom-pan-pinch`
+6. `npm install @dnd-kit/core`
