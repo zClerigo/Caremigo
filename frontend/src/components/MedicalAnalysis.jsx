@@ -31,15 +31,6 @@ function MedicalAnalysis() {
             setImage(`http://localhost:8000${recordResponse.data.image}`);
             setImageData(recordResponse.data.image_data);
           }
-          // If record already has analysis, set it
-          if (recordResponse.data.analysis_summary) {
-            setMedicalSummary(
-              `1. Summary\n${recordResponse.data.analysis_summary}\n\n` +
-              `2. What can I do?\n${recordResponse.data.analysis_actions}\n\n` +
-              `3. Where to go?\n${recordResponse.data.analysis_recommendations}`
-            );
-            setSavedAnalysis(true);
-          }
         } else if (recordId === 'new' && location.state?.record) {
           // Handle new record from navigation state
           const tempRecord = location.state.record;
@@ -58,11 +49,11 @@ function MedicalAnalysis() {
   }, [profileId, recordId, navigate, location.state]);
 
   useEffect(() => {
-    // Only analyze if image data exists AND analysis hasn't been saved yet
-    if (imageData && !savedAnalysis) {
+    // Always analyze if image data exists
+    if (imageData) {
       analyzeImage(imageData);
     }
-  }, [imageData, savedAnalysis]);
+  }, [imageData]);
 
   async function analyzeImage(base64Image) {
     if (!base64Image) {
@@ -336,14 +327,6 @@ function MedicalAnalysis() {
                       </p>
                     </div>
                   ))}
-                  {!savedAnalysis && (
-                    <button
-                      onClick={handleSaveAnalysis}
-                      className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                    >
-                      Save Analysis
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-8">
