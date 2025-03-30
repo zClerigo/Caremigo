@@ -1,7 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+
+const AISearchPopup = ({ text, onClose, explanation }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+        <div className="flex justify-between items-start mb-4">
+          <h3 className="text-lg font-semibold">Simplified Explanation</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-2">Selected text:</p>
+          <p className="italic text-gray-800 mb-4">"{text}"</p>
+          <p className="text-sm text-gray-600 mb-2">Simple explanation:</p>
+          <p className="text-gray-800">{explanation}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const SearchPrompt = ({ position, onClick }) => {
+  return (
+    <button
+      className="fixed bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors shadow-lg"
+      style={{
+        position: 'absolute',
+        top: `${position.y}px`,
+        left: `${position.x}px`,
+        transform: 'translate(-50%, -100%)',
+        pointerEvents: 'auto',
+        zIndex: 1000
+      }}
+      onClick={onClick}
+    >
+      Search with AI
+    </button>
+  );
+};
 
 function MedicalTerm() {
   const location = useLocation();
@@ -25,6 +68,12 @@ function MedicalTerm() {
   const [specialists, setSpecialists] = useState([]); // Add a new state for specialists
   const [userLocation, setUserLocation] = useState(null); // Add new state for user location
   const [locationError, setLocationError] = useState(null); // Add new state for location error
+  const [showPrompt, setShowPrompt] = useState(false);
+  const [promptPosition, setPromptPosition] = useState({ x: 0, y: 0 });
+  const [selectedText, setSelectedText] = useState('');
+  const [showPopup, setShowPopup] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -156,6 +205,71 @@ function MedicalTerm() {
     }
   }, [term]);
 
+  const handleTextSelection = useCallback(() => {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+
+    if (selectedText) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      
+      setPromptPosition({
+        x: rect.left + (rect.width / 2),
+        y: rect.top + window.pageYOffset
+      });
+      setSelectedText(selectedText);
+      setShowPrompt(true);
+    } else {
+      setShowPrompt(false);
+    }
+  }, []);
+
+  const handleAISearch = async () => {
+    setShowPrompt(false);
+    setIsLoading(true);
+    setShowPopup(true);
+
+    try {
+      const apiKey = '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';
+      const apiUrl = 'https://api.perplexity.ai/chat/completions';
+
+      const payload = {
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a helpful medical assistant that explains medical terms in very simple language, using analogies when possible. Explain in simple terms that a high-schooler could understand.'
+          },
+          {
+            role: 'user',
+            content: `Please explain "${selectedText}" in the simplest possible terms, as if explaining to someone with no medical knowledge. Keep it to a maximum of 3 sentences total.`
+          }
+        ]
+      };
+
+      const response = await axios.post(apiUrl, payload, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      setAiExplanation(response.data.choices[0].message.content);
+    } catch (error) {
+      console.error('Error fetching AI explanation:', error);
+      setAiExplanation('Error getting explanation. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mouseup', handleTextSelection);
+    return () => {
+      document.removeEventListener('mouseup', handleTextSelection);
+    };
+  }, [handleTextSelection]);
+
   if (loading) {
     return (
       <div className="text-gray-600 text-xl p-8 text-left">
@@ -227,6 +341,24 @@ function MedicalTerm() {
           </div>
         )}
       </div>
+
+      {showPrompt && (
+        <SearchPrompt
+          position={promptPosition}
+          onClick={handleAISearch}
+        />
+      )}
+
+      {showPopup && (
+        <AISearchPopup
+          text={selectedText}
+          explanation={isLoading ? 'Loading...' : aiExplanation}
+          onClose={() => {
+            setShowPopup(false);
+            setAiExplanation('');
+          }}
+        />
+      )}
     </div>
   );
 }
