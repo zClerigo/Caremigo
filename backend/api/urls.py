@@ -7,6 +7,7 @@ router.register(r'profiles', ProfileViewSet, basename='profile')
 router.register(r'profiles/(?P<profile_id>\d+)/records', MedicalRecordViewSet, basename='profile-records')
 router.register(r'profiles/(?P<profile_id>\d+)/tasks', TaskViewSet, basename='profile-tasks')
 router.register(r'tasks', TaskViewSet, basename='task')
+router.register(r'records', MedicalRecordViewSet, basename='record')
 
 urlpatterns = [
     path('', include(router.urls)),

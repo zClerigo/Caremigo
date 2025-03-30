@@ -8,22 +8,22 @@ const Header = () => {
         <div className="flex justify-between items-center h-40">
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
-              <img src="/Caremigo-logo.png" alt="Caremigo Logo" className="h-32" />
+              <img src="/Caremigo-logo-transparent.png" alt="Caremigo Logo" className="h-32" />
             </Link>
             <span className="text-blue-600 italic text-xl ml-4">Happy Sunday, Ziddani!</span>
           </div>
           
           <nav className="flex space-x-8">
-            <Link to="/" className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-medium">
+            <Link to="/" className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-source-sans-pro">
               Home
             </Link>
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-medium">
+            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-source-sans-pro">
               Account
             </button>
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-medium">
+            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-source-sans-pro">
               Settings
             </button>
-            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-medium">
+            <button className="text-blue-600 hover:text-blue-800 px-3 py-2 text-lg font-source-sans-pro">
               Sign Out
             </button>
           </nav>

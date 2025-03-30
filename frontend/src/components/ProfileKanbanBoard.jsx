@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
     DndContext, 
@@ -34,10 +34,13 @@ function ProfileKanbanBoard({ profile }) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Modal state
     const [editingTask, setEditingTask] = useState(null); // Task to edit
     const [records, setRecords] = useState([]); // Medical records for this profile
+    const [isCreatingTasks, setIsCreatingTasks] = useState(false); // Flag to prevent concurrent creation
+    const isMounted = useRef(false); // Ref to track component mount status
 
     // Fetch tasks and records when profile changes
     useEffect(() => {
         setLoading(true);
+        isMounted.current = true; // Component is mounted
         
         // Fetch tasks
         const fetchTasks = axios.get(`${API_URL}/api/profiles/${profile.id}/tasks/`);
@@ -48,6 +51,7 @@ function ProfileKanbanBoard({ profile }) {
         // Use Promise.all to fetch both in parallel
         Promise.all([fetchTasks, fetchRecords])
             .then(([tasksResponse, recordsResponse]) => {
+                if (!isMounted.current) return; // Check if component is still mounted
                 // Process tasks
                 const organizedTasks = Object.keys(COLUMNS).reduce((acc, status) => {
                     acc[status] = tasksResponse.data.filter(task => task.status === status).sort((a, b) => a.order - b.order);
@@ -61,68 +65,138 @@ function ProfileKanbanBoard({ profile }) {
                 setLoading(false);
             })
             .catch(err => {
+                if (!isMounted.current) return; // Check if component is still mounted
                 console.error(`Error fetching data for profile ${profile.id}:`, err);
                 setError('Failed to load data.');
                 setLoading(false);
             });
-    }, [profile.id]);
+        
+        // Cleanup function to set isMounted to false when component unmounts
+        return () => {
+            isMounted.current = false;
+        };
+    }, [profile.id]); // Dependency array includes profile.id
     
-    // Create tasks from records
+    // Create tasks from records - Added isCreatingTasks flag check
     useEffect(() => {
-        if (records.length > 0 && !loading) {
+        // Only run if not loading, not already creating, and records exist
+        if (!loading && !isCreatingTasks && records.length > 0) {
             createTasksFromRecords();
         }
-    }, [records, loading]);
+        // We only want this effect to run when loading finishes or records change,
+        // and critically, not when isCreatingTasks changes.
+    }, [records, loading]); // Keep dependencies as [records, loading]
     
     // Check if medical records exist that don't have corresponding tasks and create them
     const createTasksFromRecords = async () => {
-        if (!records.length) return;
+        if (!records.length || isCreatingTasks) return; // Exit if no records or already creating
         
-        // Get all task titles for comparison (case insensitive)
-        const existingTaskTitles = [];
-        for (const status in tasks) {
-            if (tasks[status]) {
-                existingTaskTitles.push(...tasks[status].map(task => task.title.toLowerCase()));
-            }
-        }
+        setIsCreatingTasks(true); // Set flag
+        console.log("Starting createTasksFromRecords...");
         
-        console.log("Existing task titles:", existingTaskTitles);
-        
-        // Filter records that don't have a corresponding task
-        const recordsWithoutTasks = records.filter(
-            record => !existingTaskTitles.includes(record.title.toLowerCase())
-        );
-        
-        console.log("Records without tasks:", recordsWithoutTasks);
-        
-        if (recordsWithoutTasks.length === 0) return;
-        
-        // Create tasks for records without tasks
-        const createdTasks = [];
-        
-        for (const record of recordsWithoutTasks) {
-            try {
-                // Create a new task
-                const response = await axios.post(`${API_URL}/api/profiles/${profile.id}/tasks/`, {
-                    title: record.title,
-                    description: `Follow up on medical record from ${new Date(record.date).toLocaleDateString()}`,
-                    status: 'todo'
-                });
-                
-                console.log("Created task from record:", response.data);
-                createdTasks.push(response.data);
-            } catch (err) {
-                console.error(`Error creating task for record ${record.id}:`, err);
-            }
-        }
-        
-        // Update tasks state if we created any new tasks
-        if (createdTasks.length > 0) {
-            setTasks(prev => {
-                const newTasks = {...prev};
-                newTasks['todo'] = [...(newTasks['todo'] || []), ...createdTasks];
-                return newTasks;
+        try {
+            // Get existing tasks for this profile from backend
+            const tasksResponse = await axios.get(`${API_URL}/api/profiles/${profile.id}/tasks/`);
+            if (!isMounted.current) return; // Check mount status after async call
+            const allTasks = tasksResponse.data;
+            
+            // Create a map of existing tasks with normalized titles (lowercase and trimmed)
+            const existingTaskMap = {};
+            allTasks.forEach(task => {
+                const normalizedTitle = task.title.toLowerCase().trim();
+                existingTaskMap[normalizedTitle] = task;
             });
+            
+            console.log("Existing task map:", existingTaskMap);
+            
+            // Filter records that don't have a corresponding task
+            const recordsWithoutTasks = records.filter(record => {
+                const normalizedTitle = record.title.toLowerCase().trim();
+                // Also check if a task with this title exists in the *current* frontend state
+                // This adds an extra layer of protection against rapid UI updates
+                const existsInCurrentState = Object.values(tasks).flat().some(t => t.title.toLowerCase().trim() === normalizedTitle);
+                return !existingTaskMap[normalizedTitle] && !existsInCurrentState;
+            });
+            
+            console.log("Records without tasks (after filtering):", recordsWithoutTasks);
+            
+            if (recordsWithoutTasks.length === 0) {
+                 console.log("No new tasks need to be created.");
+                 setIsCreatingTasks(false); // Reset flag early if no tasks to create
+                 return;
+            }
+            
+            // Create tasks for records without tasks
+            const createdTasksBatch = [];
+            const failedCreations = [];
+            
+            for (const record of recordsWithoutTasks) {
+                try {
+                    const normalizedTitle = record.title.toLowerCase().trim();
+                    // Final check before API call
+                    if (existingTaskMap[normalizedTitle]) {
+                        console.log(`Skipping creation, task already exists in backend map: ${normalizedTitle}`);
+                        continue;
+                    }
+                    
+                    console.log(`Attempting to create task for record: ${record.title.trim()}`);
+                    const response = await axios.post(`${API_URL}/api/profiles/${profile.id}/tasks/`, {
+                        title: record.title.trim(),
+                        description: `Follow up on medical record from ${new Date(record.date).toLocaleDateString()}`,
+                        status: 'todo'
+                    });
+                    
+                    if (!isMounted.current) return; // Check mount status
+                    
+                    console.log("Created task from record:", response.data);
+                    createdTasksBatch.push(response.data);
+                    
+                    // Add to existing map immediately to prevent duplicates *within this batch*
+                    existingTaskMap[normalizedTitle] = response.data;
+                    
+                } catch (err) {
+                    if (!isMounted.current) return; // Check mount status
+                    console.error(`Error creating task for record ${record.id} ('${record.title}'):`, err.response?.data || err.message);
+                    failedCreations.push(record.title);
+                    // If the error is due to the task already existing (e.g., 400 Bad Request with specific message),
+                    // we might want to handle it gracefully or fetch the existing task.
+                    // For now, we just log it.
+                    if (err.response?.status === 400 && err.response?.data?.title?.some(msg => msg.includes('already exists'))) {
+                         console.warn(`Task '${record.title}' likely already existed (backend validation).`);
+                    }
+                }
+            }
+            
+            // Update tasks state only if new tasks were successfully created
+            if (createdTasksBatch.length > 0) {
+                setTasks(prev => {
+                    const newTasks = {...prev};
+                    // Ensure 'todo' array exists
+                    if (!newTasks['todo']) {
+                        newTasks['todo'] = [];
+                    }
+                    // Append new tasks, filtering out any potential duplicates by ID just in case
+                    const currentTodoIds = new Set(newTasks['todo'].map(t => t.id));
+                    const uniqueNewTasks = createdTasksBatch.filter(t => !currentTodoIds.has(t.id));
+                    newTasks['todo'] = [...newTasks['todo'], ...uniqueNewTasks];
+                    return newTasks;
+                });
+                 console.log(`Added ${createdTasksBatch.length} new tasks to the UI.`);
+            }
+            if(failedCreations.length > 0) {
+                 console.warn(`Failed to create tasks for: ${failedCreations.join(', ')}`);
+                 // Optionally set an error state here
+            }
+            
+        } catch (err) {
+             if (!isMounted.current) return; // Check mount status
+            console.error("Error in createTasksFromRecords:", err);
+             setError("An error occurred while checking or creating tasks from records."); // Set component-level error
+        } finally {
+             if (isMounted.current) {
+                 setIsCreatingTasks(false); // Reset flag in finally block
+                 console.log("Finished createTasksFromRecords.");
+             }
         }
     };
 
@@ -178,139 +252,100 @@ function ProfileKanbanBoard({ profile }) {
         let overTaskIndex = -1;
         
         if(targetColumn) { // Dropped onto a task within a SortableContext
-             overTaskIndex = tasks[targetColumn]?.findIndex(t => t.id === overId) ?? -1;
+             // Calculate index relative to the tasks *currently* in the target column
+             const targetTasks = tasks[targetColumn] || [];
+             overTaskIndex = targetTasks.findIndex(t => t.id === overId);
         } else if (tasks[overId]) { // Dropped directly onto a column (useDroppable id)
             targetColumn = overId;
-            overTaskIndex = tasks[targetColumn].length; // Append to end if dropped on column directly
+            overTaskIndex = (tasks[targetColumn] || []).length; // Append to end if dropped on column directly
         } else { 
-             // Dropped somewhere unexpected, potentially over an item not in a recognized container
-             // Check if overId is a task id in any column
+             // Attempt to find the target column based on overId being a task ID
              const overTaskData = findTask(overId);
              if(overTaskData) {
                  targetColumn = overTaskData.status;
-                 overTaskIndex = tasks[targetColumn]?.findIndex(t => t.id === overId) ?? -1;
+                 // Calculate index relative to the tasks *currently* in the target column
+                 const targetTasks = tasks[targetColumn] || [];
+                 overTaskIndex = targetTasks.findIndex(t => t.id === overId);
              } else {
                  console.warn("Cannot determine drop target.");
-                 return;
+                 return; // Exit if target isn't clear
              }
+        }
+        
+        // If the target wasn't found correctly, default to the end
+        if (overTaskIndex === -1) {
+             console.warn(`Could not find overId ${overId} in target column ${targetColumn}. Appending to end.`);
+             overTaskIndex = (tasks[targetColumn] || []).length; 
         }
 
         const newStatus = targetColumn;
 
-        // Optimistic UI Update
+        // --- Optimistic UI Update --- 
         let newTasksState = { ...tasks };
-        let newOrder = 0;
-
-        // Remove task from source column
-        newTasksState[sourceColumn] = newTasksState[sourceColumn].filter(t => t.id !== activeId);
+        let targetOrderIndex = 0; // This will be the index passed to the backend
+        
+        // Create a copy of the task being moved
+        const movedTask = { ...draggedTask };
+        
+        // 1. Remove task from source column's array
+        const sourceTasks = (newTasksState[sourceColumn] || []).filter(t => t.id !== activeId);
+        newTasksState[sourceColumn] = sourceTasks;
+        
+        // 2. Prepare target column's array
+        let targetTasks = [...(newTasksState[targetColumn] || [])];
 
         if (sourceColumn === targetColumn) {
-            // --- Reordering within the same column ---
+            // Reordering within the same column
             const originalIndex = tasks[sourceColumn].findIndex(t => t.id === activeId);
-            // Ensure target index is valid
-             const targetIndex = overTaskIndex !== -1 ? overTaskIndex : tasks[targetColumn].length;
+            targetOrderIndex = overTaskIndex > originalIndex ? overTaskIndex : overTaskIndex; // Adjust index for removal
             
-            newTasksState[targetColumn] = arrayMove(tasks[targetColumn], originalIndex, targetIndex);
-            // Recalculate order based on new index in the updated array
-            newOrder = calculateNewOrder(newTasksState[targetColumn], targetIndex);
-
+            // Use arrayMove for stable reordering in the UI state
+            // Note: arrayMove needs the *original* array before filtering
+            const originalTargetTasks = tasks[targetColumn] || [];
+            const movedIndex = originalTargetTasks.findIndex(t => t.id === activeId);
+            if (movedIndex !== -1) {
+                 targetTasks = arrayMove(originalTargetTasks, movedIndex, overTaskIndex);
+            } else {
+                 console.error("Could not find moved task in original array for arrayMove");
+                 // Fallback: insert manually (less ideal for animation smoothness)
+                 targetTasks.splice(overTaskIndex, 0, movedTask);
+            }
+            
         } else {
-            // --- Moving to a different column ---
-             // Ensure target index is valid for insertion
-             const targetIndex = overTaskIndex !== -1 ? overTaskIndex : (newTasksState[targetColumn]?.length || 0);
-             if (!newTasksState[targetColumn]) newTasksState[targetColumn] = [];
-
-             // Create updated task data for insertion
-             const taskToInsert = { ...draggedTask, status: newStatus };
-             
-             // Insert into target column at the determined index
-             newTasksState[targetColumn].splice(targetIndex, 0, taskToInsert);
-             
-            // Recalculate order based on new index in the updated array
-            newOrder = calculateNewOrder(newTasksState[targetColumn], targetIndex);
+            // Moving to a different column
+            targetOrderIndex = overTaskIndex;
+            targetTasks.splice(targetOrderIndex, 0, { ...movedTask, status: newStatus });
         }
-
+        
+        newTasksState[targetColumn] = targetTasks;
+        
+        // Update the UI optimistically
         setTasks(newTasksState);
+        // Clear any previous errors immediately for smoother transition
         setError(null);
 
-        // Log the data being sent
-        console.log(`Updating task ${activeId}:`, { status: newStatus, order: newOrder });
+        // Log the data being sent - Ensure 'order' represents the target index
+        console.log(`Updating task ${activeId}:`, { status: newStatus, order: targetOrderIndex });
 
-        // Update Backend
-        axios.patch(`${API_URL}/api/tasks/${activeId}/`, { status: newStatus, order: newOrder })
+        // --- Update Backend --- 
+        axios.patch(`${API_URL}/api/tasks/${activeId}/`, { status: newStatus, order: targetOrderIndex })
             .then(response => {
-                console.log(`Task ${activeId} updated successfully`, response.data);
-                // Optional: Update state with response data for consistency, especially if backend recalculates order
-                // setTasks(prev => updateStateWithBackendResponse(prev, response.data)); 
+                console.log(`Task ${activeId} updated successfully in backend`, response.data);
+                // Backend response might contain the definitive state (e.g., recalculated order)
+                // It's often good practice to update the frontend state again based on the backend response
+                // to ensure full consistency, though the optimistic update handles the immediate visual.
+                // Example: Refetch tasks or merge response.data into the state.
+                // For now, we assume the optimistic update + backend logic is sufficient.
             })
             .catch(err => {
-                console.error(`Error updating task ${activeId}:`, err);
-                setError('Failed to update task. Please refresh.');
-                // Revert optimistic update: Refetch or restore previous state snapshot
-                // Simple revert (might lose other changes): refetchTasks();
-            });
-    };
-
-    const handleAddTask = (columnId, newTaskData) => {
-        // Assume new tasks always go to 'todo' and backend assigns order, or we could calculate front-end estimate
-        const newTaskPayload = {
-            ...newTaskData, // Should contain { title: '... '}
-            status: columnId, // Will be 'todo' since we only add there for now
-            // order: calculate next order if needed, backend handles it now
-        };
-
-        // Optimistic UI Update
-        const tempId = `temp-${Date.now()}`; // Temporary ID for the UI
-        const optimisticTask = {
-            ...newTaskPayload,
-            id: tempId, 
-            profile: profile.id, // Add profile id for consistency
-            description: '', // Default values
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            order: (tasks[columnId]?.length || 0) // Temporary order for UI
-        };
-
-        setTasks(prev => ({
-            ...prev,
-            [columnId]: [...(prev[columnId] || []), optimisticTask]
-        }));
-        setError(null); // Clear previous errors
-
-        // API Call
-        axios.post(`${API_URL}/api/profiles/${profile.id}/tasks/`, newTaskPayload)
-            .then(response => {
-                console.log("Task created successfully:", response.data);
-                // Replace temporary task with real task from backend response
-                setTasks(prev => ({
-                    ...prev,
-                    [columnId]: prev[columnId].map(task => 
-                        task.id === tempId ? response.data : task
-                    )
-                }));
-            })
-            .catch(err => {
-                // Log the full error object for more details
-                console.error(`Error creating task for profile ${profile.id}:`, err);
-                if (err.response) {
-                    // The request was made and the server responded with a status code
-                    // that falls out of the range of 2xx
-                    console.error('Backend Response Data:', err.response.data);
-                    console.error('Backend Response Status:', err.response.status);
-                    console.error('Backend Response Headers:', err.response.headers);
-                } else if (err.request) {
-                    // The request was made but no response was received
-                    console.error('No response received:', err.request);
-                } else {
-                    // Something happened in setting up the request that triggered an Error
-                    console.error('Error setting up request:', err.message);
-                }
-                setError('Failed to create task. Please try again.');
-                // Revert optimistic update
-                setTasks(prev => ({
-                    ...prev,
-                    [columnId]: prev[columnId].filter(task => task.id !== tempId)
-                }));
+                // Log the error, but avoid jarring UI changes like immediate error messages or reverts.
+                // The backend holds the source of truth. If it failed, the UI might be temporarily 
+                // inconsistent until the next refresh or successful update.
+                console.error(`Error updating task ${activeId} in backend:`, err.response?.data || err.message);
+                // Optionally set a *non-blocking* error state or use a notification system
+                // setError('Failed to save task change. Please refresh or try again.'); 
+                // Avoid reverting the optimistic update here to keep the UI smooth.
+                // If persistent errors occur, a full refresh might be needed.
             });
     };
 
@@ -373,7 +408,7 @@ function ProfileKanbanBoard({ profile }) {
     if (!tasks || Object.values(tasks).every(list => list.length === 0)) return (
         <div className="profile-board bg-gray-100 p-4 rounded-lg shadow-lg min-h-[200px]">
             <h2 className="text-xl font-source-sans-pro mb-4">{profile.name}</h2>
-            <p className="text-gray-500">No tasks found for this profile.</p>
+            <p className="text-gray-500 font-source-sans-pro">No tasks found for this profile.</p>
         </div>
     );
 
@@ -406,7 +441,6 @@ function ProfileKanbanBoard({ profile }) {
                                 id={statusKey} 
                                 title={statusValue}
                                 tasks={tasks[statusKey] || []} 
-                                onAddTask={handleAddTask}
                                 onEditTask={handleOpenEditModal} // Pass edit handler
                             />
                         ))}

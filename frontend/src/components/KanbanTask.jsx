@@ -37,7 +37,7 @@ function KanbanTask({ task, onEditClick }) {
             {...attributes} 
             {...listeners} // Attach listeners to make the whole card draggable
             onClick={!isDragging ? handleEdit : undefined} 
-            className={`kanban-task bg-white p-2 border rounded shadow-sm text-sm ${!isDragging ? 'cursor-pointer hover:shadow-md' : 'cursor-grabbing'}`}
+            className={`kanban-task bg-white p-2 border rounded shadow-sm text-sm font-source-sans-pro ${!isDragging ? 'cursor-pointer hover:shadow-md' : 'cursor-grabbing'}`}
         >
             <p className="font-medium pointer-events-none">{task.title}</p>
         </div>
