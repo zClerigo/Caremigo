@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import ScrollFadeIn from './ScrollFadeIn';
+
+// Define hints array
+const hints = [
+  'Hint: Click on a medical term within an analysis to find Specialists in your area.',
+  'Hint: You can drag and drop profile cards on the home screen to reorder them!',
+  'Hint: Add new medical records for any profile by clicking the \'+\' button on their board.',
+  'Hint: Click on a profile card to view their medical records.'
+];
 
 function MedicalTerm() {
   const location = useLocation();
@@ -26,6 +35,9 @@ function MedicalTerm() {
   const [userLocation, setUserLocation] = useState(null); // Add new state for user location
   const [locationError, setLocationError] = useState(null); // Add new state for location error
 
+  // State for cycling hints
+  const [currentHintIndex, setCurrentHintIndex] = useState(0);
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -46,8 +58,28 @@ function MedicalTerm() {
     }
   }, []);
 
+  // Effect for cycling hints during loading
+  useEffect(() => {
+    let intervalId = null;
+    if (loading) {
+      // Start interval only when loading
+      intervalId = setInterval(() => {
+        setCurrentHintIndex((prevIndex) => (prevIndex + 1) % hints.length);
+      }, 5000); // Change hint every 5 seconds
+    }
+
+    // Cleanup function to clear the interval
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [loading]); // Rerun effect if loading state changes
+
   useEffect(() => {
     const fetchDefinition = async () => {
+      // Reset hint index when starting a new fetch
+      setCurrentHintIndex(0);
       setLoading(true);
       setError(null);
 
@@ -154,12 +186,18 @@ function MedicalTerm() {
     if (term) {
       fetchDefinition();
     }
-  }, [term]);
+  }, [term, isSpecialist]);
 
   if (loading) {
     return (
-      <div className="text-gray-600 text-xl p-8 text-left">
-        Loading definition...
+      // Center the content vertically and horizontally
+      <div className="min-h-[calc(100vh-100px)] flex flex-col items-center justify-center text-center p-8">
+        {/* Optional: Add a subtle loading spinner */}
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-4"></div> 
+        {/* Display the current hint */}
+        <p className="text-lg text-gray-600 italic">
+          {hints[currentHintIndex]}
+        </p>
       </div>
     );
   }
@@ -181,13 +219,15 @@ function MedicalTerm() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-4xl font-bold text-gray-800 mb-8 text-left">
-        {isSpecialist ? `About ${term}s` : `Definition of ${term}`}
-      </h1>
-      <div className="bg-white rounded-lg shadow-lg p-8">
+    <ScrollFadeIn className="container mx-auto px-4 py-8 max-w-4xl">
+      <ScrollFadeIn>
+        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-left">
+          {isSpecialist ? `About ${term}s` : `Definition of ${term}`}
+        </h1>
+      </ScrollFadeIn>
+      <ScrollFadeIn className="bg-white rounded-lg shadow-lg p-8">
         {isSpecialist && specialistList && (
-          <div className="mb-8 pb-6 border-b border-gray-200">
+          <ScrollFadeIn className="mb-8 pb-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 text-left">
               Top {term}s {userLocation ? 'Near You' : 'in Your Area'}
             </h2>
@@ -199,13 +239,13 @@ function MedicalTerm() {
                 Note: Please verify availability and insurance coverage before scheduling an appointment.
               </p>
             </div>
-          </div>
+          </ScrollFadeIn>
         )}
-        <div className="prose max-w-none text-gray-700 text-lg mb-8 whitespace-pre-wrap text-left">
+        <ScrollFadeIn className="prose max-w-none text-gray-700 text-lg mb-8 whitespace-pre-wrap text-left">
           <ReactMarkdown>{definition}</ReactMarkdown>
-        </div>
+        </ScrollFadeIn>
         {sources.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-gray-200">
+          <ScrollFadeIn className="mt-8 pt-6 border-t border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 text-left">
               Sources
             </h2>
@@ -224,10 +264,10 @@ function MedicalTerm() {
                 </li>
               ))}
             </ul>
-          </div>
+          </ScrollFadeIn>
         )}
-      </div>
-    </div>
+      </ScrollFadeIn>
+    </ScrollFadeIn>
   );
 }
 

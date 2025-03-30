@@ -11,7 +11,7 @@ const ScrollFadeIn = ({ children, className = '', once = true, amount = 0.2 }) =
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6, // Animation duration
+        duration: 1.5, // Animation duration
         ease: 'easeOut', // Animation easing
       },
     },
