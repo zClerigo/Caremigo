@@ -1,11 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 
 function MedicalTerm() {
   const location = useLocation();
-  const { term } = location.state;
+  const term = location.state?.term;
+
+  // Add a check for term existence
+  if (!term) {
+    return (
+      <div className="text-red-600 text-xl p-8 text-left">
+        No medical term provided. Please try again.
+      </div>
+    );
+  }
+
   const [definition, setDefinition] = useState(null);
+  const [sources, setSources] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -13,10 +25,46 @@ function MedicalTerm() {
     const fetchDefinition = async () => {
       setLoading(true);
       setError(null);
+
       try {
-        // Replace with your API endpoint for definitions
-        const response = await axios.get(`YOUR_DEFINITION_API_ENDPOINT?term=${term}`);
-        setDefinition(response.data.definition); // Adjust based on your API response structure
+        // Replace this with your Perplexity API key
+        const apiKey = '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';
+        const apiUrl = 'https://api.perplexity.ai/chat/completions';
+
+        // Prepare the request payload
+        const payload = {
+          model: 'sonar', // Adjust the model as needed
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful assistant that provides concise medical definitions. Explain in simple terms that a high-schooler could understand. If possible, break down into bullet points. Use only single returns. Make sure to keep sources. If you cannot find a definition, say "Definition not found." and do not return any other text.',
+            },
+            {
+              role: 'user',
+              content: `Define the medical term: ${term}`,
+            },
+          ],
+        };
+
+        // Make the API request using axios
+        const response = await axios.post(apiUrl, payload, {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // Extract and set the definition from the API response
+        const completion = response.data.choices[0].message.content;
+        const citations = response.data.citations || [];
+
+        const formattedSources = citations.map((citation, index) => ({
+          id: `source-${index}`,  // Create a more unique id
+          url: citation,
+          text: `Source ${index + 1}`
+        }));
+        setDefinition(completion);
+        setSources(formattedSources);
       } catch (err) {
         setError(err);
       } finally {
@@ -30,21 +78,47 @@ function MedicalTerm() {
   }, [term]);
 
   if (loading) {
-    return <div>Loading definition...</div>;
+    return <div className="text-gray-600 text-xl p-8 text-left">Loading definition...</div>;
   }
 
   if (error) {
-    return <div>Error fetching definition: {error.message}</div>;
+    return <div className="text-red-600 text-xl p-8 text-left">Error fetching definition: {error.message}</div>;
   }
 
   if (!definition) {
-    return <div>No definition found for {term}.</div>;
+    return <div className="text-gray-600 text-xl p-8 text-left">No definition found for {term}.</div>;
   }
 
   return (
-    <div>
-      <h1>Definition of {term}</h1>
-      <p>{definition}</p>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 className="text-4xl font-bold text-gray-800 mb-8 text-left">
+        Definition of {term}
+      </h1>
+      <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="prose max-w-none text-gray-700 text-lg mb-8 whitespace-pre-wrap text-left">
+          <ReactMarkdown>{definition}</ReactMarkdown>
+        </div>
+        {sources.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 text-left">Sources</h2>
+            <ul className="space-y-2 text-left">
+              {sources.map((source) => (
+                <li key={source.id} className="text-gray-600 text-sm">
+                  {source.text}:{' '}
+                  <a 
+                    href={source.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                  > 
+                    {source.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
