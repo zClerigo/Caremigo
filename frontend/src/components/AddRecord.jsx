@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import KanbanBoard from './KanbanBoard';
 
 function AddRecord({ profile, onBack }) {
   const [title, setTitle] = useState('');
@@ -92,6 +93,9 @@ function AddRecord({ profile, onBack }) {
         </button>
         <h1 className="text-2xl font-semibold text-center flex-1">Add Medical Record</h1>
       </div>
+      
+      {/* Kanban Board */}
+      <KanbanBoard profile={profile} />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div>

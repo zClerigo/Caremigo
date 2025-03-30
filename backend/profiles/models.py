@@ -18,3 +18,24 @@ class MedicalRecord(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.profile.name}"
+
+class Todo(models.Model):
+    STATUS_CHOICES = (
+        ('todo', 'To Do'),
+        ('in_progress', 'In Progress'),
+        ('done', 'Done'),
+    )
+    
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='todos')
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['order']
+    
+    def __str__(self):
+        return f"{self.title} - {self.profile.name}"
