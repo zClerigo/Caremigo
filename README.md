@@ -22,7 +22,7 @@ Caremigo, our solution, is a web app that can analyze and provide a layman's int
 https://youtu.be/VW8gUxOkCjc
 
 ## Technologies
-Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, Tailwind, SQL Lite
+Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, Tailwind, SQL Lite, HTML Geolocation API
 
 How to run:
 
