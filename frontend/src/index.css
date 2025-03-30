@@ -4,6 +4,6 @@
 @tailwind utilities;
 
 body {
-  font-family: 'Verdana', sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
   @apply antialiased;
 }
