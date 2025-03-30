@@ -63,21 +63,27 @@ function MedicalTerm() {
             {
               role: 'system',
               content: isSpecialist
-                ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists ${
-                    userLocation ? "near the user's location" : 'in the area'
-                  } with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
+                // UNCOMMENT TO USE LOCATION DATA
+                // ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists ${
+                //     userLocation ? "near the user's location" : 'in the area'
+                //   } with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
+                ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists near Hobokn, NJ with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
                 : 'You are a helpful assistant that provides concise medical definitions. Explain in simple terms that a high-schooler could understand. If possible, break down into bullet points. Use only single returns. Make sure to keep sources. If you cannot find a definition, say "Definition not found." and do not return any other text.',
             },
             {
               role: 'user',
-              content: isSpecialist
-                ? `List the top 5 ${term}s ${
-                    userLocation
-                      ? `near coordinates (${userLocation.lat.toFixed(
-                          4
-                        )}, ${userLocation.lng.toFixed(4)})`
-                      : 'in the area'
-                  } with their contact information:`
+            //   UNCOMMENT TO USE LOCATION DATA
+            //   content: isSpecialist
+            //     ? `List the top 5 ${term}s ${
+            //         userLocation
+            //           ? `near coordinates (${userLocation.lat.toFixed(
+            //               4
+            //             )}, ${userLocation.lng.toFixed(4)})`
+            //           : 'in the area'
+            //       } with their contact information:`
+            //     : `Define the medical term: ${term}`,
+                content: isSpecialist
+                ? `List the top 5 ${term}s in Hoboken, NJ with their contact information:`
                 : `Define the medical term: ${term}`,
             },
           ],
