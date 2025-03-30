@@ -6,6 +6,7 @@ import AddRecord from './components/AddRecord';
 import MedicalAnalysis from './components/MedicalAnalysis';
 import MedicalRecords from './components/MedicalRecords';
 import MedicalTerm from './components/MedicalTerm';
+import Header from './components/Header';
 import './App.css'
 
 function ProfileView() {
@@ -40,13 +41,18 @@ function ProfileView() {
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<HomeScreen />} />
-        <Route path="/profile/:profileId" element={<ProfileView />} />
-        <Route path="/add-record/:profileId" element={<AddRecord />} />
-        <Route path="/medical-analysis/:profileId/:recordId" element={<MedicalAnalysis />} />
-        <Route path="/medical-term" element={<MedicalTerm />} />
-      </Routes>
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <main className="pt-4">
+          <Routes>
+            <Route path="/" element={<HomeScreen />} />
+            <Route path="/profile/:profileId" element={<ProfileView />} />
+            <Route path="/add-record/:profileId" element={<AddRecord />} />
+            <Route path="/medical-analysis/:profileId/:recordId" element={<MedicalAnalysis />} />
+            <Route path="/medical-term" element={<MedicalTerm />} />
+          </Routes>
+        </main>
+      </div>
     </Router>
   );
 }
