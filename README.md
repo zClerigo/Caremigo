@@ -19,7 +19,7 @@ One of our founders, Zidanni's, family has their own doctors in the Philippines.
 Caremigo, our solution, is a web app that can analyze and provide a layman's interpretation of you and your loved ones medical documents, outline the steps you can take now to mitigate out-of-bound measurements, and recommend you to the best specialists in your area based on your values. We strive to demystify health results and eliminate the hours of personal research already done by concerned parents and children in regards to health documentation. Simply upload, scan, and get clear actionable insights on key terms, next steps, and local specialists within your area that can treat your specific issues. Organize documents easily with built-in task boards for quick access, helping you keep track of what matters most.
 
 ## Video Demo
-https://youtu.be/VW8gUxOkCjc
+[![IMAGE ALT TEXT HERE](https://youtu.be/VW8gUxOkCjc)](https://youtu.be/VW8gUxOkCjc)
 
 ## Technologies
 Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, Tailwind, SQL Lite
