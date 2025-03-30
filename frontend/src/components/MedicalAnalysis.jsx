@@ -110,7 +110,7 @@ function MedicalAnalysis() {
   async function extractTextRegions(base64Image) {
     try {
       console.log("Starting text region extraction");
-      const apiKey = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+      const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
       const apiUrl = "https://vision.googleapis.com/v1/images:annotate";
       
       // Log the first few characters of the base64 string to verify it's valid
@@ -133,7 +133,7 @@ function MedicalAnalysis() {
       };
       
       console.log("Sending request to Vision API");
-      const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+      const response = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -223,7 +223,7 @@ function MedicalAnalysis() {
   async function generateMedicalSummary(imageBase64) {
     try {
       // Call Gemini API
-      const apiKey = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+      const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
       const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
       
       const requestData = {
@@ -249,7 +249,7 @@ function MedicalAnalysis() {
         }
       };
       
-      const geminiResponse = await fetch(`${apiUrl}?key=${apiKey}`, {
+      const geminiResponse = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -434,75 +434,116 @@ function MedicalAnalysis() {
   const handleRegionClick = async (region, event) => {
     // Check for existing popup
     const existingPopupIndex = popups.findIndex(popup => popup.region.id === region.id);
-    
+  
     if (existingPopupIndex >= 0) {
-            const updatedPopups = [...popups];
+      const updatedPopups = [...popups];
       const popup = updatedPopups.splice(existingPopupIndex, 1)[0];
       setPopups([...updatedPopups, popup]);
       return;
     }
-    
+  
     // Calculate position
     let position = { x: 100, y: 100 };
     if (event) {
-      // Position the popup near the click but ensure it stays in viewport
       const x = Math.min(event.clientX, window.innerWidth - 300); // 300px is approximate popup width
       const y = Math.min(event.clientY, window.innerHeight - 200); // 200px is approximate popup height
       position = { x, y };
     }
-    
-    try {
-      // Get the full text from Vision API response
-    const fullText = textRegions.map(r => r.text).join(' ');
-
-      const apiKey = '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';
-      const apiUrl = 'https://api.perplexity.ai/chat/completions';
-
-      const response = await axios.post(apiUrl, {
-        model: 'sonar',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that explains medical terms and values. Given the context of the medical document and a specific value, explain what this value means and if it is within normal range. Keep the explanation under 100 words.'
-          },
-          {
-            role: 'user',
-            content: `In the context of this medical document: "${fullText}", explain this specific value or measurement: ${region.text}`
-          }
-        ]
-      }, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      const explanation = response.data.choices[0].message.content;
-
-      // Add new popup with the additional information
+  
+    // Create popup immediately with loading state
+    const popupId = `popup-${Date.now()}`;
     setPopups([...popups, {
-      id: `popup-${Date.now()}`,
+      id: popupId,
       region: region,
       position: position,
-        explanation: explanation
+      isLoading: true,
+      explanation: null // Initialize explanation to null
     }]);
-    
-    // Highlight the region
-    setSelectedRegion(region);
+  
+    try {
+      const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+  
+      // Get the full text from Vision API response
+      const fullText = textRegions.map(r => r.text).join(' ');
+
+      // Identify the property associated with the value
+      const property = identifyPropertyNearValue(region, textRegions);
+
+      // Prompt Gemini to explain the specific value in the context of extracted properties
+      const explanationPrompt = `Explain the medical significance of the value "${region.text}" in the context of the property "${property}" found in this medical document. Keep the explanation under 100 words.`;
+
+      const explanationRequestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text: explanationPrompt
+              }
+            ]
+          }
+        ],
+        generation_config: {
+          temperature: 0.4,
+          top_p: 0.95,
+          max_output_tokens: 300
+        }
+      };
+
+      const geminiResponse = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(explanationRequestData)
+      });
+
+      const geminiData = await geminiResponse.json();
+
+      let explanation = "Explanation not available.";
+      if (geminiData.candidates && geminiData.candidates[0]?.content?.parts[0]?.text) {
+        explanation = geminiData.candidates[0].content.parts[0].text;
+      }
+
+      // Log the output
+      console.log("Gemini Explanation:", explanation);
+
+      // Update existing popup with explanation
+      setPopups(currentPopups =>
+        currentPopups.map(popup =>
+          popup.id === popupId
+            ? { ...popup, explanation, isLoading: false }
+            : popup
+        )
+      );
 
     } catch (error) {
       console.error('Error fetching explanation:', error);
-      // Add popup without explanation if API call fails
-      setPopups([...popups, {
-        id: `popup-${Date.now()}`,
-        region: region,
-        position: position,
-        explanation: 'Unable to load explanation.'
-      }]);
-      setSelectedRegion(region);
+      setPopups(currentPopups =>
+        currentPopups.map(popup =>
+          popup.id === popupId
+            ? { ...popup, explanation: 'Unable to load explanation.', isLoading: false }
+            : popup
+        )
+      );
     }
-  };
   
+    setSelectedRegion(region);
+  };
+
+  // Helper function to identify the property near the value
+  function identifyPropertyNearValue(valueRegion, allRegions) {
+    // Find a region that is close to the value region and likely represents the property
+    const nearbyProperty = allRegions.find(
+      (r) =>
+        Math.abs(r.x - valueRegion.x) < 10 && // Adjust the threshold as needed
+        Math.abs(r.y - valueRegion.y) < 5 && // Adjust the threshold as needed
+        r.id !== valueRegion.id
+    );
+
+    return nearbyProperty ? nearbyProperty.text : "Unknown Property";
+  }
+
   const closePopup = (popupId) => {
     setPopups(popups.filter(popup => popup.id !== popupId));
     // If this was the selected region, deselect it
@@ -758,7 +799,14 @@ function MedicalAnalysis() {
             </div>
             <div className="max-h-40 overflow-y-auto">
               <p className="text-gray-700 text-sm mb-2">{popup.region.text || ''}</p>
-<p className="text-gray-700 text-sm mb-2">{popup.explanation || ''}</p>
+              {popup.isLoading ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
+                  <span className="ml-2 text-sm text-gray-600">Loading explanation...</span>
+                </div>
+              ) : (
+                <p className="text-gray-700 text-sm mb-2">{popup.explanation || ''}</p>
+              )}
               <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-200">
                 <p>Position: {popup.region.x.toFixed(1)}%, {popup.region.y.toFixed(1)}%</p>
                 <p>Size: {popup.region.width.toFixed(1)}% × {popup.region.height.toFixed(1)}%</p>
