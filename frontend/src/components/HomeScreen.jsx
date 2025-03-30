@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import KanbanContainer from './KanbanContainer';
+import ScrollFadeIn from './ScrollFadeIn';
 
 const HomeScreen = () => {
   const [profiles, setProfiles] = useState([]);
@@ -51,44 +52,46 @@ const HomeScreen = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl italic font-source-sans-pro text-gray-900 mb-8">Family Medical Records</h1>
+      <ScrollFadeIn className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <h1 className="text-4xl italic font-source-sans-pro text-gray-900 mb-8">Your Family Medical Records</h1>
         
-        <div className="mb-12">
+        <ScrollFadeIn className="mb-12">
           <KanbanContainer />
-        </div>
+        </ScrollFadeIn>
 
-        <h2 className="text-2xl italic font-source-sans-pro text-gray-800 mb-6">Profiles</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Existing Profiles */}
-          {profiles.map((profile) => (
-            <div
-              key={profile.id}
-              onClick={() => handleProfileClick(profile.id)}
-              className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
-            >
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">{profile.name}</h2>
-              <p className="text-gray-600">Relationship: {profile.relationship}</p>
-            </div>
-          ))}
+        <ScrollFadeIn>
+          <h2 className="text-2xl italic font-source-sans-pro text-gray-800 mb-6">Profiles</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {profiles.map((profile) => (
+              <ScrollFadeIn key={profile.id}>
+                <div
+                  onClick={() => handleProfileClick(profile.id)}
+                  className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300"
+                >
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-2">{profile.name}</h2>
+                  <p className="text-gray-600">Relationship: {profile.relationship}</p>
+                </div>
+              </ScrollFadeIn>
+            ))}
 
-          {/* Create New Profile Card */}
-          <div
-            onClick={() => setShowModal(true)}
-            className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300 border-2 border-dashed border-gray-300 flex items-center justify-center"
-          >
-            <button className="text-blue-600 hover:text-blue-800 text-xl font-semibold flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create New Profile
-            </button>
+            <ScrollFadeIn>
+              <div
+                onClick={() => setShowModal(true)}
+                className="bg-white rounded-lg shadow-lg p-6 cursor-pointer hover:shadow-xl transition-shadow duration-300 border-2 border-dashed border-gray-300 flex items-center justify-center"
+              >
+                <button className="text-blue-600 hover:text-blue-800 text-xl font-semibold flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create New Profile
+                </button>
+              </div>
+            </ScrollFadeIn>
           </div>
-        </div>
-      </div>
+        </ScrollFadeIn>
+      </ScrollFadeIn>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-8 max-w-md w-full">

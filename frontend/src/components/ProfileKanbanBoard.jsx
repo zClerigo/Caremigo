@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import axios from 'axios';
 import { 
     DndContext, 
@@ -462,4 +462,5 @@ function ProfileKanbanBoard({ profile }) {
     );
 }
 
-export default ProfileKanbanBoard; 
+// Wrap the export with React.memo
+export default memo(ProfileKanbanBoard); 
