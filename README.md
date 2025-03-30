@@ -1,4 +1,5 @@
 # Caremigo
+![Caremigo-banner_1](https://github.com/user-attachments/assets/3633a78d-a848-4502-a6dc-6b020bef17ae)
 
 ## Team Name
 The Caremigos
@@ -12,8 +13,11 @@ One of our founders, Zidanni's, family has their own doctors in the Philippines.
 Caremigo, our solution, is a web app that can analyze and provide a layman's interpretation of you and your loved ones medical documents, outline the steps you can take now to mitigate out-of-bound measurements, and recommend you to the best specialists in your area based on your values. We strive to demystify health results and eliminate the hours of personal research already done by concerned parents and children in regards to health documentation. Simply upload, scan, and get clear actionable insights on key terms, next steps, and local specialists within your area that can treat your specific issues. Organize documents easily with built-in task boards for quick access, helping you keep track of what matters most.
 
 ## Technologies
-Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API
+Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, SQL Lite
 
+## Sponsor Track
+Harnessing AI for Community Risk Awareness
+Create an informal tool or app that educates users about the potential risks in their community (e.g., natural disasters, health concerns).
 
 How to run:
 
