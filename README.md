@@ -12,3 +12,4 @@ Dependencies:
 2. `pip install django`
 3. `npm install axios`
 3. `npm install react-router-dom`
+4. `npm install react-markdown`
