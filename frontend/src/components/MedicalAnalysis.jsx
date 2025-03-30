@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import HighlightedLink from './HighlightedLink';
 import axios from 'axios';
 
 function MedicalAnalysis() {
@@ -86,7 +87,7 @@ function MedicalAnalysis() {
           {
             parts: [
               {
-                text: "Analyze this medical record image and provide information in the following three categories:\n\n1. Summary: Brief explanation of the results in simple, layman's terms.\n\n2. What can I do?: Suggest lifestyle changes, diet modifications, or exercises the patient can personally implement.\n\n3. Where to go?: Recommend specific specialist doctors (e.g., cardiologist, endocrinologist) the patient should consult based on any abnormal values.\n\nKeep each section concise, about 1-2 sentences each."
+                text: "Analyze this medical record image and provide information in the following three categories:\n\n1. Summary: Brief explanation of the results in simple, layman's terms.\n\n2. What can I do?: Suggest lifestyle changes, diet modifications, or exercises the patient can personally implement.\n\n3. Where to go?: Recommend specific specialist doctors (e.g., cardiologist, endocrinologist) the patient should consult based on any abnormal values.\n\nKeep each section concise, about 1-2 sentences each.\n\nFor each term in each section, if the term is complex, surround the term with ||. For example, ||medical-term||."
               },
               {
                 inline_data: {
@@ -135,9 +136,24 @@ function MedicalAnalysis() {
     
     for (let i = 1; i < sections.length; i += 2) {
       const title = sections[i].replace(/^\d+\.\s+/, '');
-      const content = sections[i + 1];
-      formattedSections.push({ title, content });
+      let content = sections[i + 1];
+
+      const parts = [];
+      let lastIndex = 0;
+
+      content.replace(/\|\|(.*?)\|\|/g, (match, word, index) => {
+        parts.push(content.substring(lastIndex, index)); // Add text before the match
+        parts.push(<HighlightedLink key={index} word={word} />); // Add the link component
+        lastIndex = index + match.length;
+        return match; // return match so replace works
+      });
+
+      parts.push(content.substring(lastIndex)); // Add remaining text
+
+      formattedSections.push({ title, content: parts });
     }
+
+    console.log("Formatted sections:", formattedSections);
     
     return formattedSections;
   };
@@ -292,7 +308,11 @@ function MedicalAnalysis() {
                   {formattedSummary.map((section, index) => (
                     <div key={index} className="bg-gray-50 p-4 rounded-lg">
                       <h3 className="font-semibold text-gray-800 mb-2">{section.title}</h3>
-                      <p className="text-gray-600">{section.content}</p>
+                      <p className="text-gray-600">
+                        {section.content.map((part, partIndex) => (
+                          <React.Fragment key={partIndex}>{part}</React.Fragment>
+                        ))}
+                      </p>
                     </div>
                   ))}
                 </div>
