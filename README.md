@@ -3,6 +3,9 @@
   <img src="https://github.com/user-attachments/assets/8e2c7d35-77b3-4c8c-9d39-c50a1a34e673" width="480" height="270">
 </div>
 
+## Sponsor Track
+Chubb: Harnessing AI for Community Risk Awareness
+Create an informal tool or app that educates users about the potential risks in their community (e.g., natural disasters, health concerns).
 
 ## Team Name
 The Caremigos
@@ -17,10 +20,6 @@ Caremigo, our solution, is a web app that can analyze and provide a layman's int
 
 ## Technologies
 Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API, Tailwind, SQL Lite
-
-## Sponsor Track
-Chubb: Harnessing AI for Community Risk Awareness
-Create an informal tool or app that educates users about the potential risks in their community (e.g., natural disasters, health concerns).
 
 How to run:
 
