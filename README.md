@@ -34,5 +34,5 @@ Thanks to Caremigo, I feel empowered to make informed decisions about my childre
 An AI-powered web app for parents to manage their dependents' medical records. Upload, scan, and get clear insights on key terms, next steps, and local specialists. Organize documents easily with built-in kanban boards for quick access, helping you keep track of what matters most. Say goodbye to wasting countless hours worrying over your loved ones' results, and welcome Caremigo's stress-free approach into your family.
 
 ## Technologies
-Python Django (Frontend), JavaScript React (Backend), Perplexity AI, Gemini AI
+Python Django (Frontend), JavaScript React (Backend), Perplexity AI API, Gemini AI API, Google Cloud Vision API
 
