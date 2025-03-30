@@ -1,5 +1,8 @@
 # Caremigo
-![Caremigo-banner_1](https://github.com/user-attachments/assets/3633a78d-a848-4502-a6dc-6b020bef17ae)
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/8e2c7d35-77b3-4c8c-9d39-c50a1a34e673" width="480" height="270">
+</div>
+
 
 ## Team Name
 The Caremigos
