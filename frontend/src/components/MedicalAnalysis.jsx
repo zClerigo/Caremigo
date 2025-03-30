@@ -452,7 +452,9 @@ function MedicalAnalysis() {
     }
     
     try {
-      // Make API call to get additional information
+      // Get the full text from Vision API response
+    const fullText = textRegions.map(r => r.text).join(' ');
+
       const apiKey = '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';
       const apiUrl = 'https://api.perplexity.ai/chat/completions';
 
@@ -461,11 +463,11 @@ function MedicalAnalysis() {
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful assistant that explains medical terms and values. Provide a brief explanation of what this value or measurement means in the context of medical records. Keep the explanation under 100 words.'
+            content: 'You are a helpful assistant that explains medical terms and values. Given the context of the medical document and a specific value, explain what this value means and if it is within normal range. Keep the explanation under 100 words.'
           },
           {
             role: 'user',
-            content: `Explain this medical value or measurement: ${region.text}`
+            content: `In the context of this medical document: "${fullText}", explain this specific value or measurement: ${region.text}`
           }
         ]
       }, {
