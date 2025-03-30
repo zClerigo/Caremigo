@@ -231,7 +231,7 @@ function MedicalAnalysis() {
           {
             parts: [
               {
-                text: "Analyze this medical record image and provide information in the following three categories:\n\n1. Summary: Brief explanation of the results in simple, layman's terms.\n\n2. What can I do?: Suggest lifestyle changes, diet modifications, or exercises the patient can personally implement.\n\n3. Where to go?: Recommend specific specialist doctors (e.g., cardiologist, endocrinologist) the patient should consult based on any abnormal values.\n\nKeep each section concise, about 1-2 sentences each.\n\nFor each term in each section, if the term is complex, surround the term with ||. For example, ||medical-term||."
+                text: "Analyze this medical record image and provide information in the following three categories:\n\n1. Summary: Brief explanation of the results in simple, layman's terms.\n\n2. What can I do?: Suggest lifestyle changes, diet modifications, or exercises the patient can personally implement.\n\n3. Where to go?: Recommend specific specialist doctors (e.g., cardiologist, endocrinologist) the patient should consult based on any abnormal values.\n\nKeep each section concise, about 1-2 sentences each.\n\nFor each term in each section, if the term is complex, surround the term with ||. For example, ||medical-term||.\n\nAt the end of summary, list all specialists included in the Where to go section FORMAT AS FOLLOWS: _included-specialists: specialist1, specialist2,..."
               },
               {
                 inline_data: {
@@ -274,8 +274,19 @@ function MedicalAnalysis() {
   const formatSummary = (summary) => {
     if (!summary) return null;
     
+    console.log('Original summary:', summary);
+    
+    // Extract specialists list from the end indicated by _included-specialists
+    const specialistMatch = summary.match(/_included-specialists:\s*(.*?)(?:\n|$)/);
+    const specialistsList = specialistMatch ? 
+      specialistMatch[1].trim().toLowerCase().split(/,\s*/) : 
+      [];
+    
+    // Remove the specialist line from the main summary
+    const mainSummary = summary.replace(/_included-specialists:.*?(?:\n|$)/, '');
+    
     // Split by numbered sections (1., 2., 3.)
-    const sections = summary.split(/(\d+\.\s+)/);
+    const sections = mainSummary.split(/(\d+\.\s+)/);
     const formattedSections = [];
     
     for (let i = 1; i < sections.length; i += 2) {
@@ -286,18 +297,19 @@ function MedicalAnalysis() {
       let lastIndex = 0;
 
       content.replace(/\|\|(.*?)\|\|/g, (match, word, index) => {
-        parts.push(content.substring(lastIndex, index)); // Add text before the match
-        parts.push(<HighlightedLink key={index} word={word} />); // Add the link component
+        parts.push(content.substring(lastIndex, index));
+        // Check if the word is in the specialists list
+        const isSpecialist = specialistsList.some(specialist => 
+          specialist.includes(word.toLowerCase())
+        );
+        parts.push(<HighlightedLink key={index} word={word} isSpecialist={isSpecialist} />);
         lastIndex = index + match.length;
         return match; // return match so replace works
       });
 
-      parts.push(content.substring(lastIndex)); // Add remaining text
-
+      parts.push(content.substring(lastIndex));
       formattedSections.push({ title, content: parts });
     }
-
-    console.log("Formatted sections:", formattedSections);
     
     return formattedSections;
   };
@@ -804,4 +816,4 @@ function MedicalAnalysis() {
   );
 }
 
-export default MedicalAnalysis; 
+export default MedicalAnalysis;
