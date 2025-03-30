@@ -13,6 +13,7 @@ function MedicalAnalysis() {
   const [isLoading, setIsLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [medicalSummary, setMedicalSummary] = useState(null);
+  const [savedAnalysis, setSavedAnalysis] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,6 +49,7 @@ function MedicalAnalysis() {
   }, [profileId, recordId, navigate, location.state]);
 
   useEffect(() => {
+    // Always analyze if image data exists
     if (imageData) {
       analyzeImage(imageData);
     }
@@ -206,9 +208,19 @@ function MedicalAnalysis() {
         }
       } else if (recordId && recordId !== 'new') {
         // Update existing record with analysis
+        const formData = new FormData();
+        formData.append('analysis_summary', analysisData.analysis_summary);
+        formData.append('analysis_actions', analysisData.analysis_actions);
+        formData.append('analysis_recommendations', analysisData.analysis_recommendations);
+
         const response = await axios.patch(
           `http://localhost:8000/api/profiles/${profileId}/records/${recordId}/`,
-          analysisData
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
         );
 
         if (response.status === 200) {
@@ -228,11 +240,11 @@ function MedicalAnalysis() {
     }
   };
 
-  useEffect(() => {
+  const handleSaveAnalysis = async () => {
     if (medicalSummary) {
-      saveAnalysis(medicalSummary);
+      await saveAnalysis(medicalSummary);
     }
-  }, [medicalSummary]);
+  };
 
   const handleBack = () => {
     if (recordId === 'new') {

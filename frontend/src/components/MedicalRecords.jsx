@@ -101,33 +101,9 @@ const MedicalRecords = ({ profile, onBack }) => {
                       onClick={() => handleAnalyzeRecord(record)}
                       className="text-blue-500 hover:text-blue-700 text-sm"
                     >
-                      Analyze Record
+                      View Analysis
                     </button>
                   </div>
-                  
-                  {(record.analysis_summary || record.analysis_actions || record.analysis_recommendations) && (
-                    <div className="mt-4 pt-4 border-t">
-                      <h4 className="font-semibold text-gray-800 mb-2">Previous Analysis</h4>
-                      {record.analysis_summary && (
-                        <div className="mb-3">
-                          <h5 className="text-sm font-medium text-gray-700">Summary</h5>
-                          <p className="text-sm text-gray-600">{record.analysis_summary}</p>
-                        </div>
-                      )}
-                      {record.analysis_actions && (
-                        <div className="mb-3">
-                          <h5 className="text-sm font-medium text-gray-700">Recommended Actions</h5>
-                          <p className="text-sm text-gray-600">{record.analysis_actions}</p>
-                        </div>
-                      )}
-                      {record.analysis_recommendations && (
-                        <div>
-                          <h5 className="text-sm font-medium text-gray-700">Specialist Recommendations</h5>
-                          <p className="text-sm text-gray-600">{record.analysis_recommendations}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
