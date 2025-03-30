@@ -101,7 +101,7 @@ const MedicalRecords = ({ profile, onBack }) => {
                       onClick={() => handleAnalyzeRecord(record)}
                       className="text-blue-500 hover:text-blue-700 text-sm"
                     >
-                      Analyze Record
+                      View Analysis
                     </button>
                   </div>
                   
