@@ -1,6 +1,6 @@
 # Caremigo
 
-HOW TO RUN:
+How to run:
 
 1. Run `npm install` in the frontend directory
 2. Run `npm run dev` in the frontend directory
@@ -15,6 +15,7 @@ Dependencies:
 4. `npm install react-markdown`
 5. `npm install react-zoom-pan-pinch`
 6. `npm install @dnd-kit/core`
+7. `npm install framer-motion`
 
 ## Team Name
 blank
