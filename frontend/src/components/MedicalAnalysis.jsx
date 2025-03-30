@@ -25,6 +25,7 @@ function MedicalAnalysis() {
   const [popups, setPopups] = useState([]);
   const [isDragging, setIsDragging] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [valueInterpretations, setValueInterpretations] = useState({});
   const navigate = useNavigate();
   const imageRef = useRef(null);
 
@@ -75,6 +76,7 @@ function MedicalAnalysis() {
     setAnalyzing(true);
     setMedicalSummary(null);
     setTextRegions([]);
+    setValueInterpretations({});
 
     try {
       // Generate medical summary using Gemini
@@ -95,6 +97,10 @@ function MedicalAnalysis() {
       console.log("Received regions:", regions);
       if (regions && regions.length > 0) {
         setTextRegions(regions);
+        
+        // Generate interpretations for all detected values
+        const interpretations = await generateValueInterpretations(regions);
+        setValueInterpretations(interpretations);
       } else {
         console.warn("No text regions found in the image");
       }
@@ -106,7 +112,7 @@ function MedicalAnalysis() {
     }
   }
 
-  // New function to extract text regions using Vision API
+  // Modify the extractTextRegions function to also capture test names/labels
   async function extractTextRegions(base64Image) {
     try {
       console.log("Starting text region extraction");
@@ -125,7 +131,7 @@ function MedicalAnalysis() {
             features: [
               {
                 type: "TEXT_DETECTION",
-                maxResults: 50
+                maxResults: 100  // Increased to capture more text
               }
             ]
           }
@@ -170,49 +176,74 @@ function MedicalAnalysis() {
         const imgHeight = img.height || 1000; // Default if not available
         console.log("Image dimensions for calculations:", { width: imgWidth, height: imgHeight });
         
-        // Filter for measurements and values
+        // Filter for measurements, values, and test names/labels
         const valueRegex = /^[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?(?:\s*[%<>])?$/; // Match numbers with optional units
         const rangeRegex = /^\d+\s*[-–]\s*\d+$/; // Match ranges like "10-20"
         const unitRegex = /^\d+\s*(?:mg|g|kg|ml|L|mmol\/L|μmol\/L|U\/L|mmHg|cm|mm|μm|ng\/mL|pg\/mL|IU\/L|mIU\/L)$/i; // Match numbers with medical units
         
-        // Convert to our format, filtering for values only
-        const regions = annotations
-          .filter(annotation => {
-            const text = annotation.description.trim();
-            return (
-              valueRegex.test(text) || 
-              rangeRegex.test(text) || 
-              unitRegex.test(text) ||
-              /^\d+$/.test(text) || // Just numbers
-              /^[<>]\s*\d+$/.test(text) // Less than or greater than values
-            );
-          })
-          .map((annotation, index) => {
-            const vertices = annotation.boundingPoly.vertices;
-            
-            // Calculate bounding box
-            const minX = Math.min(...vertices.map(v => v.x || 0));
-            const minY = Math.min(...vertices.map(v => v.y || 0));
-            const maxX = Math.max(...vertices.map(v => v.x || 0));
-            const maxY = Math.max(...vertices.map(v => v.y || 0));
-            
-            return {
-              id: `text-${index}`,
-              x: (minX / imgWidth) * 100,
-              y: (minY / imgHeight) * 100,
-              width: ((maxX - minX) / imgWidth) * 100,
-              height: ((maxY - minY) / imgHeight) * 100,
-              text: annotation.description
-            };
-          });
+        // First, extract all annotations
+        const allRegions = annotations.map((annotation, index) => {
+          const vertices = annotation.boundingPoly.vertices;
+          
+          // Calculate bounding box
+          const minX = Math.min(...vertices.map(v => v.x || 0));
+          const minY = Math.min(...vertices.map(v => v.y || 0));
+          const maxX = Math.max(...vertices.map(v => v.x || 0));
+          const maxY = Math.max(...vertices.map(v => v.y || 0));
+          
+          return {
+            id: `text-${index}`,
+            x: (minX / imgWidth) * 100,
+            y: (minY / imgHeight) * 100,
+            width: ((maxX - minX) / imgWidth) * 100,
+            height: ((maxY - minY) / imgHeight) * 100,
+            text: annotation.description,
+            isValue: valueRegex.test(annotation.description.trim()) || 
+                    rangeRegex.test(annotation.description.trim()) || 
+                    unitRegex.test(annotation.description.trim()) ||
+                    /^\d+$/.test(annotation.description.trim()) || // Just numbers
+                    /^[<>]\s*\d+$/.test(annotation.description.trim()), // Less than or greater than values
+            centerX: ((minX + maxX) / 2 / imgWidth) * 100,
+            centerY: ((minY + maxY) / 2 / imgHeight) * 100
+          };
+        });
         
-        console.log("Extracted value regions:", regions);
-        return regions;
+        // Now identify which regions are values and which might be test names
+        // Values are already marked with isValue flag
+        // For each value, try to find the closest text to its left that's not a value
+        // This is likely the test name/parameter
+        
+        const valueRegions = allRegions.filter(region => region.isValue);
+        
+        // For each value, find its likely test name
+        valueRegions.forEach(valueRegion => {
+          // Look for text regions to the left of this value (same line, slightly above, or slightly below)
+          const possibleLabels = allRegions.filter(region => 
+            !region.isValue && // Not a value itself
+            region.x < valueRegion.x && // To the left
+            Math.abs(region.centerY - valueRegion.centerY) < 2 // Roughly same vertical position (within 2%)
+          );
+          
+          // Sort by horizontal distance (closest first)
+          possibleLabels.sort((a, b) => 
+            Math.abs(a.x + a.width - valueRegion.x) - Math.abs(b.x + b.width - valueRegion.x)
+          );
+          
+          // Assign the closest label as this value's test name
+          if (possibleLabels.length > 0) {
+            valueRegion.testName = possibleLabels[0].text;
+            valueRegion.testNameId = possibleLabels[0].id;
+          } else {
+            valueRegion.testName = "Unknown Test";
+          }
+        });
+        
+        console.log("Extracted value regions with test names:", valueRegions);
+        return valueRegions;
       } else {
         console.warn("No text annotations found in Vision API response");
         return [];
       }
-      
     } catch (error) {
       console.error("Error extracting text regions:", error);
       return [];
@@ -268,6 +299,99 @@ function MedicalAnalysis() {
     } catch (error) {
       console.error("Medical summary generation error:", error);
       return null;
+    }
+  }
+
+  // Modify the generateValueInterpretations function to use test names
+  async function generateValueInterpretations(regions) {
+    try {
+      if (!regions || regions.length === 0) {
+        return {};
+      }
+      
+      console.log("Generating interpretations for all detected values");
+      const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+      
+      // Create a list of all detected values with their test names
+      const valuesWithTests = regions.map(region => 
+        `${region.testName || "Unknown Test"}: ${region.text}`
+      ).join('\n');
+      
+      // Prompt Gemini to explain all values with their test names
+      const prompt = `
+        I have detected the following values in a medical document, with their associated test names:
+        
+        ${valuesWithTests}
+        
+        For each value, provide a brief medical interpretation explaining:
+        1. What this test measures
+        2. The normal range (if applicable)
+        3. What this specific value indicates (normal, high, low, etc.)
+        4. Any potential health implications
+        
+        Format your response as a JSON object where each key is the exact value and each value is the interpretation:
+        
+        {
+          "value1": "interpretation for value1",
+          "value2": "interpretation for value2",
+          ...
+        }
+        
+        Keep each interpretation under 100 words and focus on medical significance only.
+      `;
+      
+      const requestData = {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generation_config: {
+          temperature: 0.2,
+          top_p: 0.95,
+          max_output_tokens: 1000
+        }
+      };
+      
+      const response = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(requestData)
+      });
+      
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        const responseText = data.candidates[0].content.parts[0].text;
+        console.log("Gemini response for interpretations:", responseText);
+        
+        // Extract JSON from the response
+        try {
+          // Find JSON object in the response text
+          const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const jsonStr = jsonMatch[0];
+            const interpretations = JSON.parse(jsonStr);
+            console.log("Parsed interpretations:", interpretations);
+            return interpretations;
+          }
+        } catch (jsonError) {
+          console.error("Error parsing JSON from Gemini response:", jsonError);
+          console.log("Raw response:", responseText);
+        }
+      }
+      
+      return {};
+    } catch (error) {
+      console.error("Error generating value interpretations:", error);
+      return {};
     }
   }
 
@@ -431,6 +555,7 @@ function MedicalAnalysis() {
     }
   };
 
+  // Update the handleRegionClick function to include test name in the popup
   const handleRegionClick = async (region, event) => {
     // Check for existing popup
     const existingPopupIndex = popups.findIndex(popup => popup.region.id === region.id);
@@ -450,99 +575,107 @@ function MedicalAnalysis() {
       position = { x, y };
     }
   
-    // Create popup immediately with loading state
+    // Get the interpretation from our pre-generated interpretations
+    let explanation = null;
+    if (valueInterpretations && valueInterpretations[region.text]) {
+      explanation = valueInterpretations[region.text];
+    }
+  
+    // Create popup with either the pre-generated explanation or loading state
     const popupId = `popup-${Date.now()}`;
     setPopups([...popups, {
       id: popupId,
       region: region,
       position: position,
-      isLoading: true,
-      explanation: null // Initialize explanation to null
+      isLoading: !explanation,
+      explanation: explanation
     }]);
   
-    try {
-      const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
-      const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+    // If we don't have a pre-generated explanation, fetch one on-demand
+    if (!explanation) {
+      try {
+        const apiKeyGoogle = "AIzaSyAfUJbHB5Kr7oL0kvY00FuLo9aEuaE0uYM";
+        const apiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
   
-      // Get the full text from Vision API response
-      const fullText = textRegions.map(r => r.text).join(' ');
-
-      // Identify the property associated with the value
-      const property = identifyPropertyNearValue(region, textRegions);
-
-      // Prompt Gemini to explain the specific value in the context of extracted properties
-      const explanationPrompt = `Explain the medical significance of the value "${region.text}" in the context of the property "${property}" found in this medical document. Keep the explanation under 100 words.`;
-
-      const explanationRequestData = {
-        contents: [
-          {
-            parts: [
-              {
-                text: explanationPrompt
-              }
-            ]
+        // Use the test name if available
+        const testName = region.testName || "Unknown Test";
+  
+        // Prompt Gemini to explain the specific value with its test name
+        const explanationPrompt = `
+          Explain the medical significance of the value "${region.text}" for the test "${testName}".
+          Include:
+          1. What this test measures
+          2. The normal range (if applicable)
+          3. What this specific value indicates (normal, high, low, etc.)
+          4. Any potential health implications
+          
+          Keep the explanation under 100 words.
+        `;
+  
+        const explanationRequestData = {
+          contents: [
+            {
+              parts: [
+                {
+                  text: explanationPrompt
+                }
+              ]
+            }
+          ],
+          generation_config: {
+            temperature: 0.4,
+            top_p: 0.95,
+            max_output_tokens: 300
           }
-        ],
-        generation_config: {
-          temperature: 0.4,
-          top_p: 0.95,
-          max_output_tokens: 300
+        };
+  
+        const geminiResponse = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(explanationRequestData)
+        });
+  
+        const geminiData = await geminiResponse.json();
+  
+        let newExplanation = "Explanation not available.";
+        if (geminiData.candidates && geminiData.candidates[0]?.content?.parts[0]?.text) {
+          newExplanation = geminiData.candidates[0].content.parts[0].text;
         }
-      };
-
-      const geminiResponse = await fetch(`${apiUrl}?key=${apiKeyGoogle}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(explanationRequestData)
-      });
-
-      const geminiData = await geminiResponse.json();
-
-      let explanation = "Explanation not available.";
-      if (geminiData.candidates && geminiData.candidates[0]?.content?.parts[0]?.text) {
-        explanation = geminiData.candidates[0].content.parts[0].text;
+  
+        // Log the output
+        console.log("Gemini Explanation:", newExplanation);
+  
+        // Update existing popup with explanation
+        setPopups(currentPopups =>
+          currentPopups.map(popup =>
+            popup.id === popupId
+              ? { ...popup, explanation: newExplanation, isLoading: false }
+              : popup
+          )
+        );
+  
+        // Also update our interpretations object for future use
+        setValueInterpretations(prev => ({
+          ...prev,
+          [region.text]: newExplanation
+        }));
+  
+      } catch (error) {
+        console.error('Error fetching explanation:', error);
+        setPopups(currentPopups =>
+          currentPopups.map(popup =>
+            popup.id === popupId
+              ? { ...popup, explanation: 'Unable to load explanation.', isLoading: false }
+              : popup
+          )
+        );
       }
-
-      // Log the output
-      console.log("Gemini Explanation:", explanation);
-
-      // Update existing popup with explanation
-      setPopups(currentPopups =>
-        currentPopups.map(popup =>
-          popup.id === popupId
-            ? { ...popup, explanation, isLoading: false }
-            : popup
-        )
-      );
-
-    } catch (error) {
-      console.error('Error fetching explanation:', error);
-      setPopups(currentPopups =>
-        currentPopups.map(popup =>
-          popup.id === popupId
-            ? { ...popup, explanation: 'Unable to load explanation.', isLoading: false }
-            : popup
-        )
-      );
     }
   
     setSelectedRegion(region);
   };
-
-  // Helper function to identify the property near the value
-  function identifyPropertyNearValue(valueRegion, allRegions) {
-    // Find a region that is close to the value region and likely represents the property
-    const nearbyProperty = allRegions.find(
-      (r) =>
-        Math.abs(r.x - valueRegion.x) < 10 && // Adjust the threshold as needed
-        Math.abs(r.y - valueRegion.y) < 5 && // Adjust the threshold as needed
-        r.id !== valueRegion.id
-    );
-
-    return nearbyProperty ? nearbyProperty.text : "Unknown Property";
-  }
 
   const closePopup = (popupId) => {
     setPopups(popups.filter(popup => popup.id !== popupId));
@@ -787,7 +920,9 @@ function MedicalAnalysis() {
               className="flex justify-between items-center mb-2 cursor-grab"
               onMouseDown={(e) => startDragging(e, popup.id)}
             >
-              <h3 className="text-lg font-semibold text-gray-900 select-none">Detected Text</h3>
+              <h3 className="text-lg font-semibold text-gray-900 select-none">
+                {popup.region.testName || "Detected Value"}
+              </h3>
               <button 
                 onClick={() => closePopup(popup.id)}
                 className="text-gray-400 hover:text-gray-500 focus:outline-none"
@@ -798,7 +933,7 @@ function MedicalAnalysis() {
               </button>
             </div>
             <div className="max-h-40 overflow-y-auto">
-              <p className="text-gray-700 text-sm mb-2">{popup.region.text || ''}</p>
+              <p className="text-gray-700 font-medium text-sm mb-2">{popup.region.text || ''}</p>
               {popup.isLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-blue-500"></div>
