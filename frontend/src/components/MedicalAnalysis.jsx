@@ -804,4 +804,4 @@ function MedicalAnalysis() {
   );
 }
 
-export default MedicalAnalysis; 
+export default MedicalAnalysis;
