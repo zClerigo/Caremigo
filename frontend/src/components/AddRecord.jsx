@@ -80,6 +80,15 @@ function AddRecord() {
       return;
     }
     
+    console.log('Analyzing record for profile:', profileId);
+    console.log('Current form data:', {
+      title,
+      date,
+      description,
+      image: imagePreview,
+      imageData
+    });
+    
     // Create a temporary record with the current form data
     const tempRecord = {
       title,

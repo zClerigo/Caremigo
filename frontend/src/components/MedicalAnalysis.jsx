@@ -142,6 +142,82 @@ function MedicalAnalysis() {
     return formattedSections;
   };
 
+  const saveAnalysis = async (summary) => {
+    if (!summary) return;
+
+    try {
+      const sections = formatSummary(summary);
+      if (!sections) return;
+
+      const analysisData = {
+        analysis_summary: sections[0]?.content || '',
+        analysis_actions: sections[1]?.content || '',
+        analysis_recommendations: sections[2]?.content || ''
+      };
+
+      console.log('Saving analysis for profile:', profileId);
+      console.log('Record data:', record);
+
+      // If this is a new record, we need to create it first
+      if (recordId === 'new' && location.state?.record) {
+        const formData = new FormData();
+        formData.append('title', record.title);
+        formData.append('date', record.date);
+        formData.append('description', record.description);
+        formData.append('image_data', record.image_data);
+        formData.append('analysis_summary', analysisData.analysis_summary);
+        formData.append('analysis_actions', analysisData.analysis_actions);
+        formData.append('analysis_recommendations', analysisData.analysis_recommendations);
+
+        // Convert base64 to blob and append as file
+        const base64Response = await fetch(record.image);
+        const blob = await base64Response.blob();
+        formData.append('image', blob, 'medical_record.jpg');
+
+        console.log('Sending request to:', `http://localhost:8000/api/profiles/${profileId}/records/`);
+        const response = await axios.post(
+          `http://localhost:8000/api/profiles/${profileId}/records/`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
+        );
+
+        if (response.status === 201) {
+          navigate(`/profile/${profileId}`);
+        }
+      } else if (recordId && recordId !== 'new') {
+        // Update existing record with analysis
+        const response = await axios.patch(
+          `http://localhost:8000/api/profiles/${profileId}/records/${recordId}/`,
+          analysisData
+        );
+
+        if (response.status === 200) {
+          navigate(`/profile/${profileId}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error saving analysis:', error);
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        console.error('Profile ID:', profileId);
+        console.error('Record:', record);
+        alert('Failed to save analysis results: ' + JSON.stringify(error.response.data));
+      } else {
+        alert('Failed to save analysis results. Please try again.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (medicalSummary) {
+      saveAnalysis(medicalSummary);
+    }
+  }, [medicalSummary]);
+
   const handleBack = () => {
     if (recordId === 'new') {
       navigate(`/add-record/${profileId}`);
