@@ -26,3 +26,24 @@ class MedicalRecord(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.profile.name}"
+
+class Task(models.Model):
+    STATUS_CHOICES = [
+        ('todo', 'To Do'),
+        ('inprogress', 'In Progress'),
+        ('done', 'Done'),
+    ]
+    
+    profile = models.ForeignKey(Profile, related_name='tasks', on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    order = models.PositiveIntegerField(default=0) # Order within a status column for a profile
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order'] # Default ordering by the 'order' field
+
+    def __str__(self):
+        return f"{self.title} ({self.get_status_display()}) - {self.profile.name}"
