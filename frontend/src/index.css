@@ -7,3 +7,20 @@ body {
   font-family: 'Source Sans Pro', sans-serif;
   @apply antialiased;
 }
+
+/* Keyframes for the gradient animation */
+@keyframes gradient-animation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Class to apply the gradient animation */
+.gradient-text {
+  background: linear-gradient(to right, #272cbf, #5ab6da, #23358c); /* Light blue gradient */
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradient-animation 8s ease-in-out infinite; /* Apply the animation */
+}
