@@ -15,3 +15,18 @@ Dependencies:
 4. `npm install react-markdown`
 5. `npm install react-zoom-pan-pinch`
 6. `npm install @dnd-kit/core`
+
+## Team Name
+blank
+
+## Team Members
+Emilio Cardillo-Schrader, Zidanni Clerigo, Chinli Ong, Daniel Llonch
+
+## User Story
+
+
+## Description
+
+
+## Technologies
+
