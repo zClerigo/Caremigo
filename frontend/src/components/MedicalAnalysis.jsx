@@ -13,6 +13,7 @@ function MedicalAnalysis() {
   const [isLoading, setIsLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [medicalSummary, setMedicalSummary] = useState(null);
+  const [savedAnalysis, setSavedAnalysis] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +30,15 @@ function MedicalAnalysis() {
           if (recordResponse.data.image) {
             setImage(`http://localhost:8000${recordResponse.data.image}`);
             setImageData(recordResponse.data.image_data);
+          }
+          // If record already has analysis, set it
+          if (recordResponse.data.analysis_summary) {
+            setMedicalSummary(
+              `1. Summary\n${recordResponse.data.analysis_summary}\n\n` +
+              `2. What can I do?\n${recordResponse.data.analysis_actions}\n\n` +
+              `3. Where to go?\n${recordResponse.data.analysis_recommendations}`
+            );
+            setSavedAnalysis(true);
           }
         } else if (recordId === 'new' && location.state?.record) {
           // Handle new record from navigation state
@@ -48,10 +58,11 @@ function MedicalAnalysis() {
   }, [profileId, recordId, navigate, location.state]);
 
   useEffect(() => {
-    if (imageData) {
+    // Only analyze if image data exists AND analysis hasn't been saved yet
+    if (imageData && !savedAnalysis) {
       analyzeImage(imageData);
     }
-  }, [imageData]);
+  }, [imageData, savedAnalysis]);
 
   async function analyzeImage(base64Image) {
     if (!base64Image) {
@@ -206,9 +217,19 @@ function MedicalAnalysis() {
         }
       } else if (recordId && recordId !== 'new') {
         // Update existing record with analysis
+        const formData = new FormData();
+        formData.append('analysis_summary', analysisData.analysis_summary);
+        formData.append('analysis_actions', analysisData.analysis_actions);
+        formData.append('analysis_recommendations', analysisData.analysis_recommendations);
+
         const response = await axios.patch(
           `http://localhost:8000/api/profiles/${profileId}/records/${recordId}/`,
-          analysisData
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          }
         );
 
         if (response.status === 200) {
@@ -228,11 +249,11 @@ function MedicalAnalysis() {
     }
   };
 
-  useEffect(() => {
+  const handleSaveAnalysis = async () => {
     if (medicalSummary) {
-      saveAnalysis(medicalSummary);
+      await saveAnalysis(medicalSummary);
     }
-  }, [medicalSummary]);
+  };
 
   const handleBack = () => {
     if (recordId === 'new') {
@@ -315,6 +336,14 @@ function MedicalAnalysis() {
                       </p>
                     </div>
                   ))}
+                  {!savedAnalysis && (
+                    <button
+                      onClick={handleSaveAnalysis}
+                      className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    >
+                      Save Analysis
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-8">
