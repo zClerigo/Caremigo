@@ -99,7 +99,7 @@ function MedicalTerm() {
                 // ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists ${
                 //     userLocation ? "near the user's location" : 'in the area'
                 //   } with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
-                ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists near Hobokn, NJ with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
+                ? `You are a helpful assistant that provides information about medical specialists. First list the top 5 specialists near Hoboken, NJ with their Name, Address, Phone Number, and make sure to include WEBSITE specific to doctor (not list)with information in a clear format. Then explain their role and what conditions they treat. Divide the two with __ (two underscores). MAKE SURE TO KEEP SOURCES`
                 : 'You are a helpful assistant that provides concise medical definitions. Explain in simple terms that a high-schooler could understand. If possible, break down into bullet points. Use only single returns. Make sure to keep sources. If you cannot find a definition, say "Definition not found." and do not return any other text.',
             },
             {
@@ -229,12 +229,29 @@ function MedicalTerm() {
         {isSpecialist && specialistList && (
           <ScrollFadeIn className="mb-8 pb-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 text-left">
-              Top {term}s {userLocation ? 'Near You' : 'in Your Area'}
+              Here are the top 5 {term}s {userLocation ? 'near you' : 'in Hoboken, NJ'} with their contact information:
             </h2>
-            <div className="text-gray-700 text-lg text-left">
-              <div className="prose max-w-none text-gray-700 text-lg mb-8 whitespace-pre-wrap text-left">
-                <ReactMarkdown>{specialistList}</ReactMarkdown>
-              </div>
+            <div className="text-gray-700 text-lg text-left space-y-4">
+              {specialists.map((specialist, index) => (
+                <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0">
+                  <p className="font-semibold">{specialist.name}</p>
+                  {specialist.address && <p>Address: {specialist.address}</p>}
+                  {specialist.phone && <p>Phone: {specialist.phone}</p>}
+                  {specialist.website && (
+                    <p>
+                      Website:{' '}
+                      <a
+                        href={specialist.website.startsWith('http') ? specialist.website : `http://${specialist.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {specialist.website}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              ))}
               <p className="mt-4 text-sm text-gray-600">
                 Note: Please verify availability and insurance coverage before scheduling an appointment.
               </p>
