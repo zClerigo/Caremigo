@@ -134,7 +134,7 @@ function MedicalTerm() {
 
       try {
         // Replace this with your Perplexity API key
-        const apiKey = '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';
+        const apiKey = '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';
         const apiUrl = 'https://api.perplexity.ai/chat/completions';
 
         // Prepare the request payload
@@ -262,7 +262,7 @@ function MedicalTerm() {
     setShowPopup(true);
 
     try {
-      const apiKey = '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';
+      const apiKey = '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';
       const apiUrl = 'https://api.perplexity.ai/chat/completions';
 
       const payload = {
